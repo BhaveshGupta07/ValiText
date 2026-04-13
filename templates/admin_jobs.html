@@ -24,11 +24,21 @@
                 </tr>
             </thead>
             <tbody>
-                {% for job in sample_jobs %}
+                {% for job in jobs %}
                     <tr>
-                        <td>{{ job.title }}</td>
-                        <td>{{ job.pair }}</td>
-                        <td>{{ job.status }}</td>
+                        <td>{{ job.name }}</td>
+                        <td>{{ job.src_lang }} → {{ job.tgt_lang }}</td>
+                        <td>
+                            {% if job.validated_by %}
+                                <span class="text-green-600 font-medium">Completed</span>
+                            {% else %}
+                                <span class="text-amber-600 font-medium">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center py-8 text-slate-500">No jobs created yet. <a href="{% url 'admin-create-job' %}" class="text-blue-600 hover:underline">Create one</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

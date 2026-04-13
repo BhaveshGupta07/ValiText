@@ -5,8 +5,8 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import AdminUserForm
-from .models import UserProfile
+from .forms import AdminUserForm, JobCreateForm
+from .models import UserProfile, Job
 
 
 def login_view(request: HttpRequest) -> HttpResponse:
@@ -163,17 +163,12 @@ def admin_jobs(request: HttpRequest) -> HttpResponse:
     if not request.user.is_superuser:
         return redirect("user-dashboard")
 
-    return render(
-        request,
-        "admin_jobs.html",
-        {
-            "sample_jobs": [
-                {"title": "Homepage Strings Review", "pair": "English -> Hindi", "status": "In Review"},
-                {"title": "Support FAQ Validation", "pair": "English -> Odia", "status": "Queued"},
-                {"title": "Policy Update Check", "pair": "English -> Kashmiri", "status": "Completed"},
-            ]
-        },
-    )
+    jobs = Job.objects.all().order_by("-created_at")
+    context = {
+        "jobs": jobs,
+        "display_name": request.user.get_full_name() or request.user.username or "Admin",
+    }
+    return render(request, "admin_jobs.html", context)
 
 
 @login_required(login_url="login")
@@ -181,7 +176,21 @@ def admin_create_job(request: HttpRequest) -> HttpResponse:
     if not request.user.is_superuser:
         return redirect("user-dashboard")
 
-    return render(request, "admin_create_job.html")
+    if request.method == "POST":
+        form = JobCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            job = form.save()
+            sentence_count = getattr(job, 'sentence_count', len(job.sentences.all()))
+            messages.success(request, f'Job "{job.name}" created successfully with {sentence_count} sentences.')
+            return redirect("admin-jobs")
+    else:
+        form = JobCreateForm()
+    
+    context = {
+        "form": form,
+        "display_name": request.user.get_full_name() or request.user.username or "Admin",
+    }
+    return render(request, "admin_create_job.html", context)
 
 
 @login_required(login_url="login")

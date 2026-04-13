@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import UserProfile
+from .models import UserProfile, Job
 
 
 class AdminUserForm(forms.ModelForm):
@@ -137,3 +137,79 @@ class AdminUserForm(forms.ModelForm):
             profile.approved = self.cleaned_data.get("approved", False)
             profile.save()
         return user
+
+
+class JobCreateForm(forms.ModelForm):
+    src_file = forms.FileField(
+        label="Source Corpus (TXT)",
+        help_text="One sentence per line, UTF-8 encoded"
+    )
+    tgt_file = forms.FileField(
+        label="Target Corpus (TXT)",
+        help_text="One sentence per line, UTF-8 encoded, same number as source"
+    )
+
+    class Meta:
+        model = Job
+        fields = ['name', 'src_lang', 'tgt_lang']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-input', 
+                'placeholder': 'Enter job name'
+            }),
+            'src_lang': forms.TextInput(attrs={
+                'class': 'form-input', 
+                'placeholder': 'e.g. English'
+            }),
+            'tgt_lang': forms.TextInput(attrs={
+                'class': 'form-input', 
+                'placeholder': 'e.g. Hindi'
+            }),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        src_file = cleaned_data.get('src_file')
+        tgt_file = cleaned_data.get('tgt_file')
+        if src_file and tgt_file:
+            try:
+                src_content = src_file.read().decode('utf-8')
+                tgt_content = tgt_file.read().decode('utf-8')
+                src_lines = src_content.splitlines()
+                tgt_lines = tgt_content.splitlines()
+                src_lines = [line.strip() for line in src_lines if line.strip()]
+                tgt_lines = [line.strip() for line in tgt_lines if line.strip()]
+                if len(src_lines) != len(tgt_lines):
+                    raise forms.ValidationError(
+                        f'Sentence count mismatch: Source has {len(src_lines)}, Target has {len(tgt_lines)}. They must match.'
+                    )
+                cleaned_data['src_lines'] = src_lines
+                cleaned_data['tgt_lines'] = tgt_lines
+                cleaned_data['sentence_count'] = len(src_lines)
+            except UnicodeDecodeError:
+                raise forms.ValidationError('Files must be valid UTF-8 TXT files.')
+            except Exception as e:
+                raise forms.ValidationError(f'Error processing files: {str(e)}')
+        elif not src_file or not tgt_file:
+            raise forms.ValidationError('Both source and target files are required.')
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Don't save corpus to Job, sentences created in view
+        src_lines = self.cleaned_data['src_lines']
+        tgt_lines = self.cleaned_data['tgt_lines']
+        if commit:
+            instance.save()
+            from .models import Sentence
+            sentences = []
+            for src, tgt in zip(src_lines, tgt_lines):
+                sentences.append(Sentence(
+                    job=instance,
+                    src_sentence=src,
+                    tgt_sentence=tgt
+                ))
+            Sentence.objects.bulk_create(sentences)
+            self.instance.sentence_count = len(sentences)  # for message
+        self.save_m2m()
+        return instance
