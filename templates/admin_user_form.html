@@ -1,0 +1,98 @@
+{% extends "admin_ui_base.html" %}
+
+{% block title %}{{ page_title }} - ValiText Admin{% endblock %}
+{% block nav_users %}{% if edit_mode %}active{% endif %}{% endblock %}
+{% block nav_add_user %}{% if not edit_mode %}active{% endif %}{% endblock %}
+{% block header_title %}{{ page_title }}{% endblock %}
+{% block header_subtitle %}Use the current dashboard theme to create or update user accounts{% endblock %}
+
+{% block content %}
+<section class="glass-card mx-auto max-w-5xl rounded-[28px] p-6 sm:p-8">
+    <div class="mb-6 flex items-center justify-between gap-4">
+        <div>
+            <h3 class="text-xl font-semibold text-slate-900">{{ page_title }}</h3>
+            <p class="mt-1 text-sm text-slate-500">
+                {% if edit_mode %}
+                    Update user details or optionally reset the password.
+                {% else %}
+                    Create a new validator or admin account.
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'admin-user-list' %}" class="btn-secondary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold">Back to Users</a>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="grid gap-5 md:grid-cols-2">
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.employeeid.label }}</label>
+                {{ form.employeeid }}
+                {% if form.employeeid.help_text %}
+                    <p class="field-help">{{ form.employeeid.help_text }}</p>
+                {% endif %}
+                {% for error in form.employeeid.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.fullname.label }}</label>
+                {{ form.fullname }}
+                {% for error in form.fullname.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.password1.label }}</label>
+                {{ form.password1 }}
+                {% if edit_mode %}
+                    <p class="field-help">Leave blank to keep the current password.</p>
+                {% endif %}
+                {% for error in form.password1.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">{{ form.password2.label }}</label>
+                {{ form.password2 }}
+                {% for error in form.password2.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+
+        {{ form.is_active }}
+
+        <div class="flex flex-wrap gap-3">
+            <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                {{ form.approved }}
+                <span>Approved user</span>
+            </label>
+            <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                {{ form.active }}
+                <span>Active user</span>
+            </label>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button type="submit" class="btn-primary rounded-xl px-5 py-3 text-sm font-semibold">
+                {% if edit_mode %}Update User{% else %}Save User{% endif %}
+            </button>
+            {% if edit_mode %}
+                <button type="submit" name="discard" class="btn-danger rounded-xl px-5 py-3 text-sm font-semibold" onclick="return confirm('Are you sure you want to delete this user?');">
+                    Discard User
+                </button>
+            {% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

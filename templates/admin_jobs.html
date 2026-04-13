@@ -1,0 +1,38 @@
+{% extends "admin_ui_base.html" %}
+
+{% block title %}Jobs - ValiText Admin{% endblock %}
+{% block nav_jobs %}active{% endblock %}
+{% block header_title %}Jobs{% endblock %}
+{% block header_subtitle %}Track translation validation work from a dedicated page{% endblock %}
+
+{% block content %}
+<section class="glass-card rounded-[28px] p-6">
+    <div class="mb-5 flex items-center justify-between">
+        <div>
+            <h3 class="text-lg font-semibold text-slate-900">Job List</h3>
+            <p class="text-sm text-slate-500">This page now renders through the shared admin base layout.</p>
+        </div>
+        <a href="{% url 'admin-create-job' %}" class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Create Job</a>
+    </div>
+    <div class="table-shell overflow-x-auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Language Pair</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in sample_jobs %}
+                    <tr>
+                        <td>{{ job.title }}</td>
+                        <td>{{ job.pair }}</td>
+                        <td>{{ job.status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

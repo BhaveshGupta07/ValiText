@@ -1,0 +1,25 @@
+{% extends "admin_ui_base.html" %}
+
+{% block title %}Settings - ValiText Admin{% endblock %}
+{% block nav_settings %}active{% endblock %}
+{% block header_title %}Settings{% endblock %}
+{% block header_subtitle %}System preferences inside the shared admin shell{% endblock %}
+
+{% block content %}
+<section class="glass-card mx-auto max-w-4xl rounded-[28px] p-6 sm:p-8">
+    <div class="mb-6">
+        <h3 class="text-xl font-semibold text-slate-900">Settings</h3>
+        <p class="mt-1 text-sm text-slate-500">Use this page for admin configuration options.</p>
+    </div>
+    <div class="grid gap-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+            <p class="text-sm font-semibold text-slate-800">Notifications</p>
+            <p class="mt-1 text-sm text-slate-500">Email admins when new validators are created or when users remain inactive.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+            <p class="text-sm font-semibold text-slate-800">Validation Defaults</p>
+            <p class="mt-1 text-sm text-slate-500">Choose the default review settings for new translation validation jobs.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

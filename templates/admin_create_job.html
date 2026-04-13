@@ -1,0 +1,45 @@
+{% extends "admin_ui_base.html" %}
+
+{% block title %}Create Job - ValiText Admin{% endblock %}
+{% block nav_add_job %}active{% endblock %}
+{% block header_title %}Create Job{% endblock %}
+{% block header_subtitle %}Dedicated job-creation page inside the shared admin layout{% endblock %}
+
+{% block content %}
+<section class="glass-card mx-auto max-w-4xl rounded-[28px] p-6 sm:p-8">
+    <div class="mb-6">
+        <h3 class="text-xl font-semibold text-slate-900">Create Job</h3>
+        <p class="mt-1 text-sm text-slate-500">This is a separate page rendered with the common sidebar and topbar.</p>
+    </div>
+    <form class="grid gap-5 md:grid-cols-2">
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Job Title</label>
+            <input class="form-input" placeholder="Enter job title">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Priority</label>
+            <select class="form-select">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+            </select>
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Source Language</label>
+            <input class="form-input" placeholder="e.g. English">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Target Language</label>
+            <input class="form-input" placeholder="e.g. Hindi">
+        </div>
+        <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+            <textarea class="form-input min-h-[140px]" placeholder="Describe the validation job"></textarea>
+        </div>
+        <div class="md:col-span-2 flex gap-3">
+            <button type="button" class="btn-primary rounded-xl px-5 py-3 text-sm font-semibold">Save Job</button>
+            <a href="{% url 'admin-jobs' %}" class="btn-secondary rounded-xl px-5 py-3 text-sm font-semibold">Back to Jobs</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

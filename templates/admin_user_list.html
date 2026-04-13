@@ -1,0 +1,112 @@
+{% extends "admin_ui_base.html" %}
+
+{% block title %}Users - ValiText Admin{% endblock %}
+{% block nav_users %}active{% endblock %}
+{% block header_title %}Users{% endblock %}
+{% block header_subtitle %}Manage user accounts from the current admin dashboard theme{% endblock %}
+
+{% block content %}
+<section class="glass-card rounded-[28px] p-5 sm:p-6">
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="button" id="allUsersBtn" class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">All Users</button>
+            <button type="button" id="inactiveUsersBtn" class="btn-danger rounded-xl px-4 py-2 text-sm font-semibold">
+                Inactive Users
+                {% if unapproved_count > 0 %}
+                    <span class="ml-2 inline-flex min-w-[22px] items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-xs">{{ unapproved_count }}</span>
+                {% endif %}
+            </button>
+        </div>
+        <a href="{% url 'admin-user-create' %}" class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold">Add User</a>
+    </div>
+
+    <div class="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+        <input id="userSearch" type="text" class="form-input" placeholder="Search by username, name, or email">
+        <select id="statusFilter" class="form-select">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+    </div>
+
+    <div class="table-shell overflow-x-auto">
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Is Active</th>
+                    <th>Date Joined</th>
+                    <th>Last Login</th>
+                    <th>Approved</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                {% for item in users %}
+                    <tr class="{% if not item.is_active %}user-row-unapproved{% endif %}" data-status="{% if item.is_active %}active{% else %}inactive{% endif %}">
+                        <td>{{ item.profile.employeeid|default:"-" }}</td>
+                        <td>{{ item.profile.fullname|default:item.get_full_name|default:"-" }}</td>
+                        <td>{{ item.username }}</td>
+                        <td>{{ item.email|default:"-" }}</td>
+                        <td>
+                            {% if item.is_active %}
+                                <span class="badge-pill badge-success">Active</span>
+                            {% else %}
+                                <span class="badge-pill badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.date_joined|date:"d-m-Y H:i" }}</td>
+                        <td>{{ item.last_login|date:"d-m-Y H:i"|default:"-" }}</td>
+                        <td>
+                            {% if item.profile.approved %}
+                                <span class="badge-pill badge-success">Yes</span>
+                            {% else %}
+                                <span class="badge-pill badge-danger">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin-user-edit' item.id %}" class="btn-secondary inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold">Edit</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-slate-500">No users found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const userSearch = document.getElementById("userSearch");
+    const statusFilter = document.getElementById("statusFilter");
+    const allUsersBtn = document.getElementById("allUsersBtn");
+    const inactiveUsersBtn = document.getElementById("inactiveUsersBtn");
+    const rows = Array.from(document.querySelectorAll("#userTableBody tr[data-status]"));
+
+    function filterRows(mode = "all") {
+        const searchText = userSearch.value.trim().toLowerCase();
+        const statusText = statusFilter.value;
+
+        rows.forEach((row) => {
+            const rowText = row.textContent.toLowerCase();
+            const rowStatus = row.dataset.status;
+            const matchesSearch = !searchText || rowText.includes(searchText);
+            const matchesStatus = statusText === "all" || rowStatus === statusText;
+            const matchesMode = mode === "all" || rowStatus === mode;
+            row.style.display = matchesSearch && matchesStatus && matchesMode ? "" : "none";
+        });
+    }
+
+    allUsersBtn.addEventListener("click", () => filterRows("all"));
+    inactiveUsersBtn.addEventListener("click", () => filterRows("inactive"));
+    userSearch.addEventListener("input", () => filterRows("all"));
+    statusFilter.addEventListener("change", () => filterRows("all"));
+</script>
+{% endblock %}
