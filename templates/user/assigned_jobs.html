@@ -1,0 +1,21 @@
+{% extends "user/user_base.html" %}
+
+{% block content %}
+
+<div class="glass-card">
+
+    <h3 class="text-lg font-semibold mb-4">Assigned Jobs</h3>
+
+    {% for job in jobs %}
+        <div class="border-b py-3">
+            <a href="{% url 'user-job-detail' job.id %}" class="text-blue-600">
+                {{ job.source_text|truncatechars:60 }}
+            </a>
+        </div>
+    {% empty %}
+        <p>No assigned jobs</p>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ValiText User{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: "Inter", sans-serif; }
+
+        .bg-main {
+            background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 52%, #f9fbff 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #0f0c29, #1a1744, #24243e);
+        }
+
+        .nav-item {
+            transition: 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: white;
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.9);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .diff-added {
+            color: #dc2626;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="bg-main">
+
+<!-- SIDEBAR -->
+<aside class="sidebar fixed top-0 left-0 h-full w-64 text-white hidden lg:flex flex-col">
+
+    <!-- Logo -->
+    <div class="p-6 border-b border-white/10">
+        <h1 class="text-lg font-bold">ValiText</h1>
+        <p class="text-xs text-white/40">User Panel</p>
+    </div>
+
+    <!-- NAV -->
+    <nav class="flex-1 px-3 py-4 space-y-2">
+
+        <a href="{% url 'user-dashboard' %}"
+           class="nav-item block px-4 py-3 rounded-xl text-sm">
+            Dashboard
+        </a>
+
+        <a href="{% url 'user-jobs' %}"
+           class="nav-item block px-4 py-3 rounded-xl text-sm">
+            Jobs
+        </a>
+
+        <a href="{% url 'user-assigned-jobs' %}"
+           class="nav-item block px-4 py-3 rounded-xl text-sm">
+            Assigned Jobs
+        </a>
+
+    </nav>
+
+    <!-- USER INFO -->
+    <div class="p-4 border-t border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="h-8 w-8 bg-purple-500 flex items-center justify-center rounded-lg text-xs font-bold">
+                {{ request.user.username|slice:":2"|upper }}
+            </div>
+            <div>
+                <p class="text-sm">{{ request.user.username }}</p>
+                <p class="text-xs text-white/40">{{ request.user.email }}</p>
+            </div>
+        </div>
+
+        <a href="{% url 'logout' %}" class="block mt-3 text-red-300 text-sm">
+            Logout
+        </a>
+    </div>
+
+</aside>
+
+
+<!-- MAIN -->
+<div class="lg:ml-64 p-6">
+
+    <!-- HEADER -->
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold">{% block header %}User Panel{% endblock %}</h2>
+    </div>
+
+    {% block content %}{% endblock %}
+
+</div>
+
+</body>
+</html>

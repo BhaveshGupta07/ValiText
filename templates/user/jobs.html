@@ -1,0 +1,27 @@
+{% extends "user/user_base.html" %}
+
+{% block content %}
+
+<div class="glass-card">
+
+    <h3 class="text-lg font-semibold mb-4">Available Jobs</h3>
+
+    {% for job in jobs %}
+        <div class="border-b py-3 flex justify-between items-center">
+            <div>
+                <p class="text-sm">{{ job.source_text|truncatechars:60 }}</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="job_id" value="{{ job.id }}">
+                <button class="bg-blue-500 text-white px-3 py-1 rounded">
+                    Assign to me
+                </button>
+            </form>
+        </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

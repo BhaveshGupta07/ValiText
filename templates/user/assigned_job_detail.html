@@ -1,0 +1,71 @@
+{% extends "user/user_base.html" %}
+
+{% block content %}
+
+<div class="glass-card max-w-3xl mx-auto">
+
+    <!-- Source -->
+    <div class="mb-4">
+        <p class="text-xs text-gray-500">Source</p>
+        <p class="font-medium">{{ job.source_text }}</p>
+    </div>
+
+    <!-- MT -->
+    <div class="mb-4">
+        <p class="text-xs text-gray-500">Model Translation</p>
+        <p id="mt-text">{{ job.mt_output }}</p>
+    </div>
+
+    <!-- Editable Final -->
+    <div class="mb-4">
+        <p class="text-xs text-gray-500">Final Translation</p>
+
+        <textarea id="finalText"
+                  class="w-full border rounded-lg p-3"
+                  rows="3">{{ job.mt_output }}</textarea>
+    </div>
+
+    <!-- Highlight Output -->
+    <div class="mt-4">
+        <p class="text-xs text-gray-500">Changes</p>
+        <div id="diffOutput" class="mt-2"></div>
+    </div>
+
+    <button class="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
+        Submit
+    </button>
+
+</div>
+
+
+<script>
+function highlightDiff(original, edited) {
+    const origWords = original.split(" ");
+    const editWords = edited.split(" ");
+
+    let result = "";
+
+    editWords.forEach((word, i) => {
+        if (origWords[i] !== word) {
+            result += `<span class="diff-added">${word}</span> `;
+        } else {
+            result += word + " ";
+        }
+    });
+
+    return result;
+}
+
+const mtText = document.getElementById("mt-text").innerText;
+const finalInput = document.getElementById("finalText");
+const diffOutput = document.getElementById("diffOutput");
+
+finalInput.addEventListener("input", () => {
+    diffOutput.innerHTML = highlightDiff(mtText, finalInput.value);
+});
+
+// initial render
+diffOutput.innerHTML = highlightDiff(mtText, finalInput.value);
+</script>
+
+{% endblock %}
