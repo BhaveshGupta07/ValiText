@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import AdminUserForm, JobCreateForm
-from .models import UserProfile, Job
+from .models import UserProfile, Job, Sentence
 
 
 def login_view(request: HttpRequest) -> HttpResponse:
@@ -199,3 +199,55 @@ def admin_settings(request: HttpRequest) -> HttpResponse:
         return redirect("user-dashboard")
 
     return render(request, "admin_settings.html")
+
+@login_required
+def user_dashboard(request):
+    return render(request, "user/dashboard.html")
+
+
+@login_required
+def user_jobs(request):
+    if request.method == "POST":
+        job_id = request.POST.get("job_id")
+        job = get_object_or_404(Job, job_id=job_id)
+
+        job.validated_by = request.user
+        job.save()
+
+        return redirect("user-assigned-jobs")
+
+    jobs = Job.objects.filter(validated_by__isnull=True)
+
+    return render(request, "user/jobs.html", {"jobs": jobs})
+
+
+@login_required
+def user_assigned_jobs(request):
+    jobs = Job.objects.filter(validated_by=request.user)
+
+    return render(request, "user/assigned_jobs.html", {"jobs": jobs})
+
+
+@login_required
+def user_job_detail(request, job_id):
+    job = get_object_or_404(Job, job_id=job_id, validated_by=request.user)
+    sentences = job.sentences.all()
+
+    if request.method == "POST":
+        for s in sentences:
+            edited = request.POST.get(str(s.sentence_id))
+            if edited:
+                s.validated_translation = edited
+                s.edit_made = (edited != s.tgt_sentence)
+                s.validated_by = request.user
+                s.save()
+
+        job.edit_made = True
+        job.save()
+
+        return redirect("user-assigned-jobs")
+
+    return render(request, "user/assigned_job_detail.html", {
+        "job": job,
+        "sentences": sentences
+    })

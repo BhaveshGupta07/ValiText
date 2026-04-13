@@ -2,70 +2,70 @@
 
 {% block content %}
 
-<div class="glass-card max-w-3xl mx-auto">
+<div class="glass-card max-w-4xl mx-auto">
 
-    <!-- Source -->
-    <div class="mb-4">
-        <p class="text-xs text-gray-500">Source</p>
-        <p class="font-medium">{{ job.source_text }}</p>
-    </div>
+<form method="post">
+{% csrf_token %}
 
-    <!-- MT -->
-    <div class="mb-4">
-        <p class="text-xs text-gray-500">Model Translation</p>
-        <p id="mt-text">{{ job.mt_output }}</p>
-    </div>
+<h2 class="text-lg font-semibold mb-6">{{ job.name }}</h2>
 
-    <!-- Editable Final -->
-    <div class="mb-4">
-        <p class="text-xs text-gray-500">Final Translation</p>
+{% for s in sentences %}
 
-        <textarea id="finalText"
-                  class="w-full border rounded-lg p-3"
-                  rows="3">{{ job.mt_output }}</textarea>
-    </div>
+<div class="mb-6 border-b pb-4">
 
-    <!-- Highlight Output -->
-    <div class="mt-4">
-        <p class="text-xs text-gray-500">Changes</p>
-        <div id="diffOutput" class="mt-2"></div>
-    </div>
+    <p class="text-xs text-gray-500">Source</p>
+    <p class="font-medium">{{ s.src_sentence }}</p>
 
-    <button class="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
-        Submit
-    </button>
+    <p class="text-xs text-gray-500 mt-2">Model Translation</p>
+    <p id="mt-{{ forloop.counter }}">{{ s.tgt_sentence }}</p>
+
+    <textarea name="{{ s.sentence_id }}"
+              class="finalText w-full border rounded p-2 mt-2"
+              data-id="{{ forloop.counter }}">{{ s.tgt_sentence }}</textarea>
+
+    <div class="diffOutput mt-2 text-sm"></div>
+
+</div>
+
+{% endfor %}
+
+<button class="bg-purple-600 text-white px-4 py-2 rounded">
+    Submit All
+</button>
+
+</form>
 
 </div>
 
 
 <script>
-function highlightDiff(original, edited) {
-    const origWords = original.split(" ");
-    const editWords = edited.split(" ");
+document.querySelectorAll(".finalText").forEach((textarea, index) => {
 
-    let result = "";
+    const mt = document.getElementById("mt-" + (index+1)).innerText;
+    const output = textarea.parentElement.querySelector(".diffOutput");
 
-    editWords.forEach((word, i) => {
-        if (origWords[i] !== word) {
-            result += `<span class="diff-added">${word}</span> `;
-        } else {
-            result += word + " ";
-        }
+    function highlightDiff(original, edited) {
+        const o = original.split(" ");
+        const e = edited.split(" ");
+        let res = "";
+
+        e.forEach((w, i) => {
+            if (o[i] !== w) {
+                res += `<span style="color:red">${w}</span> `;
+            } else {
+                res += w + " ";
+            }
+        });
+
+        return res;
+    }
+
+    textarea.addEventListener("input", () => {
+        output.innerHTML = highlightDiff(mt, textarea.value);
     });
 
-    return result;
-}
-
-const mtText = document.getElementById("mt-text").innerText;
-const finalInput = document.getElementById("finalText");
-const diffOutput = document.getElementById("diffOutput");
-
-finalInput.addEventListener("input", () => {
-    diffOutput.innerHTML = highlightDiff(mtText, finalInput.value);
+    output.innerHTML = highlightDiff(mt, textarea.value);
 });
-
-// initial render
-diffOutput.innerHTML = highlightDiff(mtText, finalInput.value);
 </script>
 
 {% endblock %}

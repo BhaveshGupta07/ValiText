@@ -8,8 +8,8 @@
 
     {% for job in jobs %}
         <div class="border-b py-3">
-            <a href="{% url 'user-job-detail' job.id %}" class="text-blue-600">
-                {{ job.source_text|truncatechars:60 }}
+            <a href="{% url 'user-job-detail' job.job_id %}" class="text-blue-600">
+                {{ job.name }}
             </a>
         </div>
     {% empty %}

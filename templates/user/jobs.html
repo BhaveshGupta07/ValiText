@@ -9,17 +9,20 @@
     {% for job in jobs %}
         <div class="border-b py-3 flex justify-between items-center">
             <div>
-                <p class="text-sm">{{ job.source_text|truncatechars:60 }}</p>
+                <p class="text-sm font-medium">{{ job.name }}</p>
+                <p class="text-xs text-gray-500">{{ job.src_lang }} → {{ job.tgt_lang }}</p>
             </div>
 
             <form method="post">
                 {% csrf_token %}
-                <input type="hidden" name="job_id" value="{{ job.id }}">
+                <input type="hidden" name="job_id" value="{{ job.job_id }}">
                 <button class="bg-blue-500 text-white px-3 py-1 rounded">
-                    Assign to me
+                    Assign
                 </button>
             </form>
         </div>
+    {% empty %}
+        <p>No jobs available</p>
     {% endfor %}
 
 </div>
