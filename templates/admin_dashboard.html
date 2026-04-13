@@ -1,74 +1,1401 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransValidate - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; }
+        .bg-main {
+            background: linear-gradient(135deg, #0f0c29, #1a1744, #24243e);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .nav-item {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #6366f1, #8b5cf6);
+            border-radius: 0 3px 3px 0;
+            transform: scaleY(0);
+            transition: transform 0.25s ease;
+        }
+        .nav-item:hover::before, .nav-item.active::before { transform: scaleY(1); }
+        .nav-item:hover, .nav-item.active { background: rgba(139, 92, 246, 0.1); }
+        .nav-item.active { background: rgba(139, 92, 246, 0.15); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .data-table { border-collapse: separate; border-spacing: 0; }
+        .data-table thead th {
+            background: rgba(139, 92, 246, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .data-table tbody tr { transition: all 0.2s ease; }
+        .data-table tbody tr:hover { background: rgba(139, 92, 246, 0.06); }
+        .data-table td, .data-table th { border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+        .badge-completed { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .badge-working { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-paused { background: rgba(234, 179, 8, 0.12); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.2); }
+        .badge-idle { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .badge-urgent { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge-high { background: rgba(249, 115, 22, 0.12); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.2); }
+        .badge-medium { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-low { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .clock-digit { display: inline-block; transition: all 0.3s ease; }
+        .clock-digit.flip { animation: flipDigit 0.4s ease; }
+        @keyframes flipDigit {
+            0% { transform: translateY(0); opacity: 1; }
+            40% { transform: translateY(-8px); opacity: 0; }
+            60% { transform: translateY(8px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .clock-separator { animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 3px; }
+        .sidebar-overlay { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+        .sidebar-mobile { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-mobile.closed { transform: translateX(-100%); }
+        .page-section { display: none; animation: fadeIn 0.4s ease; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .form-input {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .form-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            outline: none;
+        }
+        .form-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.2); }
+        .pulse-dot { animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
+        .toast { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast.show { transform: translateX(0) !important; }
+        .modal-backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); }
+        .modal-content { animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .activity-item { transition: all 0.2s ease; }
+        .activity-item:hover { background: rgba(139, 92, 246, 0.05); }
+        .btn-action { transition: all 0.2s ease; }
+        .btn-action:hover { transform: scale(1.05); }
+        .btn-action:active { transform: scale(0.95); }
+        .progress-ring { transition: stroke-dashoffset 0.5s ease; }
+        select option { background: #1a1744; color: white; }
+    </style>
+</head>
+<body class="bg-main font-inter text-white">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 z-30 hidden lg:hidden" onclick="closeSidebar()"></div>
 
-{% block title %}Admin Dashboard{% endblock %}
-{% block body_class %}dashboard-shell{% endblock %}
-
-{% block content %}
-<main class="dashboard-page">
-    <section class="topbar">
-        <div>
-            <p class="eyebrow">Admin workspace</p>
-            <h1>{{ display_name }}</h1>
-            <p class="muted">Control the validation program, team activity, and translation quality trends.</p>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 z-40 flex flex-col sidebar-mobile closed lg:translate-x-0 lg:!transform-none">
+        <div class="p-6 border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <i data-lucide="languages" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">ValiText</h1>
+                    <p class="text-[10px] text-white/30 uppercase tracking-widest">Admin Panel</p>
+                </div>
+            </div>
         </div>
-        <div class="topbar-actions">
-            <span class="status-chip">{{ role_label }}</span>
-            <a href="{% url 'logout' %}" class="secondary-btn">Logout</a>
+        <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+            <button onclick="switchPage('dashboard')" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white" data-page="dashboard">
+                <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i>
+                Dashboard
+            </button>
+            <button onclick="switchPage('jobs')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white" data-page="jobs">
+                <i data-lucide="briefcase" class="w-[18px] h-[18px]"></i>
+                Jobs
+            </button>
+            <button onclick="switchPage('create-user')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white" data-page="create-user">
+                <i data-lucide="user-plus" class="w-[18px] h-[18px]"></i>
+                Create User
+            </button>
+            <button onclick="switchPage('create-job')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white" data-page="create-job">
+                <i data-lucide="file-plus-2" class="w-[18px] h-[18px]"></i>
+                Create Job
+            </button>
+            <button onclick="switchPage('settings')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white" data-page="settings">
+                <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
+                Settings
+            </button>
+        </nav>
+        <div class="p-3 border-t border-white/5">
+            <div class="flex items-center gap-3 px-4 py-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold">AD</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-white/80 truncate">Admin User</p>
+                    <p class="text-[10px] text-white/30 truncate">admin@transvalidate.com</p>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400/70 hover:text-red-400 hover:bg-red-500/10">
+                <i data-lucide="log-out" class="w-[18px] h-[18px]"></i>
+                Logout
+            </button>
         </div>
-    </section>
+    </aside>
 
-    <section class="stats-grid">
-        <article class="metric-card">
-            <span>Pending reviews</span>
-            <strong>128</strong>
-            <p>Across product, support, and legal content streams.</p>
-        </article>
-        <article class="metric-card">
-            <span>Accuracy score</span>
-            <strong>96.4%</strong>
-            <p>Average quality benchmark across current language pairs.</p>
-        </article>
-        <article class="metric-card">
-            <span>Active validators</span>
-            <strong>24</strong>
-            <p>People currently reviewing in the last 30 minutes.</p>
-        </article>
-    </section>
-
-    <section class="content-grid">
-        <article class="workspace-card wide">
-            <div class="section-heading">
-                <h2>Operational overview</h2>
-                <span>Live insights</span>
-            </div>
-            <div class="timeline-list">
-                <div>
-                    <strong>Spanish UI rollout flagged 3 high-priority terms</strong>
-                    <p>Term mismatches detected in payment and subscription flows.</p>
+    <!-- Main Content -->
+    <div class="lg:ml-64 min-h-screen flex flex-col">
+        <!-- Top Bar -->
+        <header class="sticky top-0 z-20 border-b border-white/5" style="background: rgba(15, 12, 41, 0.8); backdrop-filter: blur(20px);">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-white/50 hover:text-white transition-colors">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-lg font-semibold" id="pageTitle">Dashboard</h2>
+                        <p class="text-xs text-white/30">Welcome back, Admin</p>
+                    </div>
                 </div>
-                <div>
-                    <strong>German support batch completed ahead of SLA</strong>
-                    <p>Review cycle closed with zero escalations and full approval.</p>
-                </div>
-                <div>
-                    <strong>French marketing queue reassigned</strong>
-                    <p>Balancing workload to reduce review backlog before campaign launch.</p>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="glass-card rounded-xl px-3 sm:px-4 py-2 flex items-center gap-2.5">
+                        <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></div>
+                        <div class="text-sm font-mono font-semibold tracking-wider" id="liveClock">
+                            <span class="clock-digit" id="h1">0</span><span class="clock-digit" id="h2">0</span><span class="clock-separator text-indigo-400">:</span><span class="clock-digit" id="m1">0</span><span class="clock-digit" id="m2">0</span><span class="clock-separator text-indigo-400">:</span><span class="clock-digit" id="s1">0</span><span class="clock-digit" id="s2">0</span>
+                        </div>
+                        <span class="text-xs text-white/30 font-medium hidden sm:inline" id="ampm">AM</span>
+                    </div>
+                    <div class="hidden md:flex items-center gap-2 glass-card rounded-xl px-3 py-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                        <span class="text-xs text-white/50 font-medium" id="currentDate"></span>
+                    </div>
                 </div>
             </div>
-        </article>
+        </header>
 
-        <article class="workspace-card">
-            <div class="section-heading">
-                <h2>Admin actions</h2>
-                <span>Quick controls</span>
+        <!-- Page Content -->
+        <main class="flex-1 p-4 sm:p-6">
+
+            <!-- ===== DASHBOARD PAGE ===== -->
+            <div id="page-dashboard" class="page-section active">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                    <div class="stat-card glass-card rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
+                                <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+12%</span>
+                        </div>
+                        <p class="text-xl sm:text-2xl font-bold" id="statTotalUsers">0</p>
+                        <p class="text-[10px] sm:text-xs text-white/35 mt-1">Total Users</p>
+                    </div>
+                    <div class="stat-card glass-card rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+                                <i data-lucide="briefcase" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-400"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+8%</span>
+                        </div>
+                        <p class="text-xl sm:text-2xl font-bold" id="statActiveJobs">0</p>
+                        <p class="text-[10px] sm:text-xs text-white/35 mt-1">Active Jobs</p>
+                    </div>
+                    <div class="stat-card glass-card rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+23%</span>
+                        </div>
+                        <p class="text-xl sm:text-2xl font-bold" id="statTasksCompleted">0</p>
+                        <p class="text-[10px] sm:text-xs text-white/35 mt-1">Tasks Completed</p>
+                    </div>
+                    <div class="stat-card glass-card rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
+                                <i data-lucide="globe" class="w-4 h-4 sm:w-5 sm:h-5 text-violet-400"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-medium text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full" id="statLangActive">6 active</span>
+                        </div>
+                        <p class="text-xl sm:text-2xl font-bold" id="statLanguages">0</p>
+                        <p class="text-[10px] sm:text-xs text-white/35 mt-1">Languages</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <!-- Users Table -->
+                    <div class="xl:col-span-2 glass-card rounded-2xl overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-white/5 gap-3">
+                            <div>
+                                <h3 class="font-semibold text-white">User Overview</h3>
+                                <p class="text-xs text-white/30 mt-0.5">Translation validators and their progress</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <i data-lucide="search" class="w-4 h-4 text-white/25 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                    <input type="text" id="userSearch" placeholder="Search users..." class="form-input pl-9 pr-4 py-2 rounded-lg text-xs w-36 sm:w-48" oninput="filterUsers()">
+                                </div>
+                                <select class="form-input px-3 py-2 rounded-lg text-xs cursor-pointer" id="statusFilter" onchange="filterUsers()">
+                                    <option value="all">All Status</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="working">Working</option>
+                                    <option value="paused">Paused</option>
+                                    <option value="idle">Idle</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="data-table w-full text-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">User</th>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Tasks</th>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider hidden md:table-cell">Working On</th>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Lang</th>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Status</th>
+                                        <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="flex items-center justify-between px-5 py-4 border-t border-white/5">
+                            <p class="text-xs text-white/30">Showing <span id="showingCount">0</span> of <span id="totalCount">0</span></p>
+                            <div class="flex items-center gap-1" id="pagination"></div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Feed -->
+                    <div class="glass-card rounded-2xl overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b border-white/5">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-white">Recent Activity</h3>
+                                <span class="text-[10px] text-white/30 uppercase tracking-wider">Live</span>
+                            </div>
+                        </div>
+                        <div class="p-3 sm:p-4 space-y-1 max-h-[480px] overflow-y-auto" id="activityFeed"></div>
+                    </div>
+                </div>
             </div>
-            <ul class="action-list">
-                <li>Create validation projects</li>
-                <li>Assign language owners</li>
-                <li>Audit decision history</li>
-                <li>Export quality reports</li>
-            </ul>
-        </article>
-    </section>
-</main>
-{% endblock %}
+
+            <!-- ===== JOBS PAGE ===== -->
+            <div id="page-jobs" class="page-section">
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-white/5 gap-3">
+                        <div>
+                            <h3 class="font-semibold text-white">Jobs Management</h3>
+                            <p class="text-xs text-white/30 mt-0.5">All translation validation jobs</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 text-white/25 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="jobSearch" placeholder="Search jobs..." class="form-input pl-9 pr-4 py-2 rounded-lg text-xs w-36 sm:w-48" oninput="filterJobs()">
+                            </div>
+                            <select class="form-input px-3 py-2 rounded-lg text-xs cursor-pointer" id="jobStatusFilter" onchange="filterJobs()">
+                                <option value="all">All Status</option>
+                                <option value="working">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="paused">Paused</option>
+                            </select>
+                            <button onclick="switchPage('create-job')" class="btn-action bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 hover:shadow-lg hover:shadow-purple-500/25">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">New Job</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Job</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Languages</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider hidden md:table-cell">Assigned To</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Priority</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider hidden sm:table-cell">Deadline</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Status</th>
+                                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-white/50 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex items-center justify-between px-5 py-4 border-t border-white/5">
+                        <p class="text-xs text-white/30">Showing <span id="jobShowingCount">0</span> of <span id="jobTotalCount">0</span> jobs</p>
+                        <div class="flex items-center gap-1" id="jobPagination"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CREATE USER PAGE ===== -->
+            <div id="page-create-user" class="page-section">
+                <div class="max-w-2xl mx-auto">
+                    <div class="glass-card rounded-2xl p-6 sm:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
+                                <i data-lucide="user-plus" class="w-5 h-5 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white">Create New User</h3>
+                                <p class="text-xs text-white/30">Add a new validator to the system</p>
+                            </div>
+                        </div>
+                        <form id="createUserForm" class="space-y-5" onsubmit="handleCreateUser(event)">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">First Name</label>
+                                    <input type="text" class="form-input w-full px-4 py-3 rounded-xl text-sm" placeholder="John" required id="firstName">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Last Name</label>
+                                    <input type="text" class="form-input w-full px-4 py-3 rounded-xl text-sm" placeholder="Doe" required id="lastName">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Email Address</label>
+                                <input type="email" class="form-input w-full px-4 py-3 rounded-xl text-sm" placeholder="john@company.com" required id="newUserEmail">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Role</label>
+                                    <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="userRole">
+                                        <option value="validator">Validator</option>
+                                        <option value="reviewer">Reviewer</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Language</label>
+                                    <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="userLang">
+                                        <option value="EN">English</option>
+                                        <option value="FR">French</option>
+                                        <option value="ES">Spanish</option>
+                                        <option value="DE">German</option>
+                                        <option value="ZH">Chinese</option>
+                                        <option value="JA">Japanese</option>
+                                        <option value="KO">Korean</option>
+                                        <option value="PT">Portuguese</option>
+                                        <option value="AR">Arabic</option>
+                                        <option value="HI">Hindi</option>
+                                        <option value="IT">Italian</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Password</label>
+                                <input type="password" class="form-input w-full px-4 py-3 rounded-xl text-sm" placeholder="Minimum 6 characters" required id="newUserPassword" minlength="6">
+                            </div>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                                Create User
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CREATE JOB PAGE ===== -->
+            <div id="page-create-job" class="page-section">
+                <div class="max-w-2xl mx-auto">
+                    <div class="glass-card rounded-2xl p-6 sm:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+                                <i data-lucide="file-plus-2" class="w-5 h-5 text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white">Create New Job</h3>
+                                <p class="text-xs text-white/30">Define a new translation validation job</p>
+                            </div>
+                        </div>
+                        <form id="createJobForm" class="space-y-5" onsubmit="handleCreateJob(event)">
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Job Title</label>
+                                <input type="text" class="form-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g., Website Localization - FR" required id="jobTitle">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Source Language</label>
+                                    <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="sourceLang">
+                                        <option value="EN">English</option>
+                                        <option value="FR">French</option>
+                                        <option value="ES">Spanish</option>
+                                        <option value="DE">German</option>
+                                        <option value="ZH">Chinese</option>
+                                        <option value="JA">Japanese</option>
+                                        <option value="KO">Korean</option>
+                                        <option value="PT">Portuguese</option>
+                                        <option value="AR">Arabic</option>
+                                        <option value="HI">Hindi</option>
+                                        <option value="IT">Italian</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Target Language</label>
+                                    <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="targetLang">
+                                        <option value="FR">French</option>
+                                        <option value="EN">English</option>
+                                        <option value="ES">Spanish</option>
+                                        <option value="DE">German</option>
+                                        <option value="ZH">Chinese</option>
+                                        <option value="JA">Japanese</option>
+                                        <option value="KO">Korean</option>
+                                        <option value="PT">Portuguese</option>
+                                        <option value="AR">Arabic</option>
+                                        <option value="HI">Hindi</option>
+                                        <option value="IT">Italian</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Description</label>
+                                <textarea class="form-input w-full px-4 py-3 rounded-xl text-sm resize-none" rows="3" placeholder="Job description and requirements..." id="jobDesc"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Priority</label>
+                                    <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="jobPriority">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Deadline</label>
+                                    <input type="date" class="form-input w-full px-4 py-3 rounded-xl text-sm" id="jobDeadline">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Assign to User</label>
+                                <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="assignUser">
+                                    <option value="">Unassigned</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                                Create Job
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SETTINGS PAGE ===== -->
+            <div id="page-settings" class="page-section">
+                <div class="max-w-2xl mx-auto space-y-6">
+                    <!-- Profile Card -->
+                    <div class="glass-card rounded-2xl p-6 sm:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
+                                <i data-lucide="user" class="w-5 h-5 text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white">Profile Settings</h3>
+                                <p class="text-xs text-white/30">Update your account information</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-purple-500/20">AD</div>
+                            <div>
+                                <p class="font-semibold text-white">Admin User</p>
+                                <p class="text-xs text-white/40">admin@transvalidate.com</p>
+                                <p class="text-[10px] text-indigo-400 mt-1 font-medium">Super Admin</p>
+                            </div>
+                        </div>
+                        <form class="space-y-5" onsubmit="handleSaveSettings(event)">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Display Name</label>
+                                    <input type="text" class="form-input w-full px-4 py-3 rounded-xl text-sm" value="Admin User" id="settingsName">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-white/50 mb-2">Email</label>
+                                    <input type="email" class="form-input w-full px-4 py-3 rounded-xl text-sm" value="admin@transvalidate.com" id="settingsEmail">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-white/50 mb-2">Timezone</label>
+                                <select class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer" id="settingsTimezone">
+                                    <option value="utc">UTC (Coordinated Universal Time)</option>
+                                    <option value="est">EST (Eastern Standard Time)</option>
+                                    <option value="pst">PST (Pacific Standard Time)</option>
+                                    <option value="cet">CET (Central European Time)</option>
+                                    <option value="jst">JST (Japan Standard Time)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                                Save Changes
+                            </button>
+                        </form>
+                    </div>
+                    <!-- Notification Settings -->
+                    <div class="glass-card rounded-2xl p-6 sm:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+                                <i data-lucide="bell" class="w-5 h-5 text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white">Notifications</h3>
+                                <p class="text-xs text-white/30">Manage your notification preferences</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between py-2">
+                                <div>
+                                    <p class="text-sm text-white/80">Email Notifications</p>
+                                    <p class="text-xs text-white/30">Receive updates via email</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer" id="notifEmail">
+                                    <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-t border-white/5">
+                                <div>
+                                    <p class="text-sm text-white/80">Job Assignments</p>
+                                    <p class="text-xs text-white/30">Notify when a job is assigned to you</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer" id="notifJob">
+                                    <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-t border-white/5">
+                                <div>
+                                    <p class="text-sm text-white/80">Task Completions</p>
+                                    <p class="text-xs text-white/30">Notify when validators complete tasks</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" id="notifTask">
+                                    <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-t border-white/5">
+                                <div>
+                                    <p class="text-sm text-white/80">Deadline Reminders</p>
+                                    <p class="text-xs text-white/30">Get reminded before job deadlines</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer" id="notifDeadline">
+                                    <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Danger Zone -->
+                    <div class="glass-card rounded-2xl p-6 sm:p-8 border-red-500/20">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-red-400">Danger Zone</h3>
+                                <p class="text-xs text-white/30">Irreversible actions</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-red-500/5 border border-red-500/10">
+                            <div>
+                                <p class="text-sm text-white/80">Delete All Data</p>
+                                <p class="text-xs text-white/30">Permanently remove all users and jobs</p>
+                            </div>
+                            <button onclick="handleResetData()" class="btn-action px-4 py-2 rounded-lg bg-red-500/15 text-red-400 text-xs font-medium hover:bg-red-500/25 transition-colors">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- User Edit Modal -->
+    <div id="userModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-content glass-card rounded-2xl w-full max-w-lg p-6 sm:p-8" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
+                        <i data-lucide="user-pen" class="w-5 h-5 text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white" id="modalTitle">Edit User</h3>
+                        <p class="text-xs text-white/30">Update user information</p>
+                    </div>
+                </div>
+                <button onclick="closeUserModal()" class="text-white/30 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="editUserForm" class="space-y-4" onsubmit="handleEditUser(event)">
+                <input type="hidden" id="editUserId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-white/50 mb-1.5">Name</label>
+                        <input type="text" class="form-input w-full px-3 py-2.5 rounded-xl text-sm" required id="editUserName">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-white/50 mb-1.5">Email</label>
+                        <input type="email" class="form-input w-full px-3 py-2.5 rounded-xl text-sm" required id="editUserEmail">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-white/50 mb-1.5">Language</label>
+                        <select class="form-input w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer" id="editUserLang">
+                            <option value="EN">English</option><option value="FR">French</option><option value="ES">Spanish</option>
+                            <option value="DE">German</option><option value="ZH">Chinese</option><option value="JA">Japanese</option>
+                            <option value="KO">Korean</option><option value="PT">Portuguese</option><option value="AR">Arabic</option>
+                            <option value="HI">Hindi</option><option value="IT">Italian</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-white/50 mb-1.5">Status</label>
+                        <select class="form-input w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer" id="editUserStatus">
+                            <option value="working">Working</option><option value="completed">Completed</option>
+                            <option value="paused">Paused</option><option value="idle">Idle</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-white/50 mb-1.5">Working On</label>
+                    <input type="text" class="form-input w-full px-3 py-2.5 rounded-xl text-sm" id="editUserWorkingOn" placeholder="Current task...">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all">
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="handleDeleteUser()" class="px-5 py-3 rounded-xl bg-red-500/15 text-red-400 font-semibold text-sm hover:bg-red-500/25 transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Job Detail Modal -->
+    <div id="jobModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-content glass-card rounded-2xl w-full max-w-lg p-6 sm:p-8" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+                        <i data-lucide="briefcase" class="w-5 h-5 text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white" id="jobModalTitle">Job Details</h3>
+                        <p class="text-xs text-white/30">View and manage job</p>
+                    </div>
+                </div>
+                <button onclick="closeJobModal()" class="text-white/30 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="jobModalContent" class="space-y-4"></div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="toggleJobStatus()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all" id="jobModalToggleBtn">
+                    Toggle Status
+                </button>
+                <button onclick="handleDeleteJob()" class="px-5 py-3 rounded-xl bg-red-500/15 text-red-400 font-semibold text-sm hover:bg-red-500/25 transition-colors">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast fixed top-6 right-6 z-[60] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-medium flex items-center gap-3 transform translate-x-[120%]" style="background: rgba(34, 197, 94, 0.9); backdrop-filter: blur(12px);" role="alert">
+        <i data-lucide="check-circle" class="w-5 h-5" id="toastIcon"></i>
+        <span id="toastMessage" class="text-white"></span>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+
+        // ========== DATA ==========
+        const userData = [
+            { id: 1, name: "Elena Vasquez", email: "elena@transco.com", tasksCompleted: 47, workingOn: "UI String Validation", job: "Mobile App - ES", language: "ES", status: "working", avatar: "EV", role: "validator" },
+            { id: 2, name: "Takeshi Yamamoto", email: "takeshi@lingua.io", tasksCompleted: 82, workingOn: "Document Review", job: "Legal Docs - JA", language: "JA", status: "completed", avatar: "TY", role: "validator" },
+            { id: 3, name: "Marie Dubois", email: "marie@bervalid.fr", tasksCompleted: 35, workingOn: "Marketing Copy", job: "Campaign - FR", language: "FR", status: "working", avatar: "MD", role: "reviewer" },
+            { id: 4, name: "Hans Mueller", email: "hans@deutschvalid.de", tasksCompleted: 61, workingOn: null, job: "Technical Manual - DE", language: "DE", status: "paused", avatar: "HM", role: "validator" },
+            { id: 5, name: "Li Wei Chen", email: "liwei@zhvalid.cn", tasksCompleted: 93, workingOn: "API Response Strings", job: "Platform - ZH", language: "ZH", status: "completed", avatar: "LC", role: "validator" },
+            { id: 6, name: "Sarah Mitchell", email: "sarah@envalid.com", tasksCompleted: 28, workingOn: "Email Templates", job: "CRM - EN", language: "EN", status: "working", avatar: "SM", role: "reviewer" },
+            { id: 7, name: "Ahmed Hassan", email: "ahmed@arabvalid.com", tasksCompleted: 15, workingOn: null, job: null, language: "AR", status: "idle", avatar: "AH", role: "validator" },
+            { id: 8, name: "Priya Sharma", email: "priya@hinvalid.in", tasksCompleted: 44, workingOn: "Help Center Articles", job: "Support - HI", language: "HI", status: "working", avatar: "PS", role: "validator" },
+            { id: 9, name: "Carlos Rivera", email: "carlos@esvalid.mx", tasksCompleted: 57, workingOn: "Website Localization", job: "E-commerce - ES", language: "ES", status: "working", avatar: "CR", role: "validator" },
+            { id: 10, name: "Yuki Tanaka", email: "yuki@javalid.jp", tasksCompleted: 71, workingOn: null, job: "Gaming - JA", language: "JA", status: "completed", avatar: "YT", role: "reviewer" },
+            { id: 11, name: "Anna Schmidt", email: "anna@devalid.de", tasksCompleted: 39, workingOn: "Contract Translation", job: "Finance - DE", language: "DE", status: "working", avatar: "AS", role: "validator" },
+            { id: 12, name: "James Wilson", email: "james@envalid.co.uk", tasksCompleted: 66, workingOn: null, job: "Healthcare - EN", language: "EN", status: "paused", avatar: "JW", role: "validator" },
+            { id: 13, name: "Sofia Rossi", email: "sofia@itvalid.it", tasksCompleted: 22, workingOn: "App Store Description", job: "Mobile - IT", language: "IT", status: "working", avatar: "SR", role: "validator" },
+            { id: 14, name: "Min-jun Park", email: "minjun@kovalid.kr", tasksCompleted: 88, workingOn: "Chatbot Scripts", job: "AI Platform - KO", language: "KO", status: "completed", avatar: "MP", role: "validator" },
+            { id: 15, name: "Fatima Al-Rashid", email: "fatima@arvalid.ae", tasksCompleted: 31, workingOn: "Government Forms", job: "Public Sector - AR", language: "AR", status: "working", avatar: "FA", role: "reviewer" },
+        ];
+
+        const jobData = [
+            { id: 1, title: "Mobile App - ES", sourceLang: "EN", targetLang: "ES", description: "Mobile application localization for Spanish market", priority: "high", deadline: "2025-02-15", status: "working", assignedTo: 1 },
+            { id: 2, title: "Legal Docs - JA", sourceLang: "EN", targetLang: "JA", description: "Legal document translation and validation", priority: "urgent", deadline: "2025-01-30", status: "completed", assignedTo: 2 },
+            { id: 3, title: "Campaign - FR", sourceLang: "EN", targetLang: "FR", description: "Marketing campaign materials for French audience", priority: "medium", deadline: "2025-03-01", status: "working", assignedTo: 3 },
+            { id: 4, title: "Technical Manual - DE", sourceLang: "EN", targetLang: "DE", description: "Technical documentation translation", priority: "low", deadline: "2025-04-01", status: "paused", assignedTo: 4 },
+            { id: 5, title: "Platform - ZH", sourceLang: "EN", targetLang: "ZH", description: "Platform interface Chinese localization", priority: "high", deadline: "2025-02-28", status: "completed", assignedTo: 5 },
+            { id: 6, title: "CRM - EN", sourceLang: "FR", targetLang: "EN", description: "CRM system English localization", priority: "medium", deadline: "2025-03-15", status: "working", assignedTo: 6 },
+            { id: 7, title: "Support - HI", sourceLang: "EN", targetLang: "HI", description: "Help center Hindi translation", priority: "medium", deadline: "2025-03-20", status: "working", assignedTo: 8 },
+            { id: 8, title: "E-commerce - ES", sourceLang: "EN", targetLang: "ES", description: "E-commerce platform Spanish localization", priority: "high", deadline: "2025-02-20", status: "working", assignedTo: 9 },
+            { id: 9, title: "Gaming - JA", sourceLang: "EN", targetLang: "JA", description: "Gaming content Japanese translation", priority: "medium", deadline: "2025-03-10", status: "completed", assignedTo: 10 },
+            { id: 10, title: "Finance - DE", sourceLang: "EN", targetLang: "DE", description: "Financial application German localization", priority: "high", deadline: "2025-02-25", status: "working", assignedTo: 11 },
+            { id: 11, title: "Healthcare - EN", sourceLang: "DE", targetLang: "EN", description: "Healthcare platform English translation", priority: "low", deadline: "2025-05-01", status: "paused", assignedTo: 12 },
+            { id: 12, title: "AI Platform - KO", sourceLang: "EN", targetLang: "KO", description: "AI chatbot Korean localization", priority: "urgent", deadline: "2025-01-25", status: "completed", assignedTo: 14 },
+        ];
+
+        const activityLog = [
+            { type: "task", user: "Li Wei Chen", action: "completed task", detail: "API Response Strings #93", time: "2 min ago" },
+            { type: "job", user: "Admin", action: "created job", detail: "Finance - DE", time: "15 min ago" },
+            { type: "status", user: "Hans Mueller", action: "changed status to", detail: "Paused", time: "1 hr ago" },
+            { type: "task", user: "Min-jun Park", action: "completed task", detail: "Chatbot Scripts #88", time: "2 hrs ago" },
+            { type: "assign", user: "Admin", action: "assigned job to", detail: "Fatima Al-Rashid", time: "3 hrs ago" },
+            { type: "task", user: "Takeshi Yamamoto", action: "completed task", detail: "Document Review #82", time: "4 hrs ago" },
+            { type: "user", user: "Admin", action: "created user", detail: "Sofia Rossi", time: "5 hrs ago" },
+            { type: "job", user: "Admin", action: "created job", detail: "AI Platform - KO", time: "6 hrs ago" },
+            { type: "task", user: "Elena Vasquez", action: "completed task", detail: "UI String Validation #47", time: "8 hrs ago" },
+            { type: "status", user: "James Wilson", action: "changed status to", detail: "Paused", time: "10 hrs ago" },
+        ];
+
+        let currentPage = 1;
+        const rowsPerPage = 8;
+        let filteredData = [...userData];
+        let jobCurrentPage = 1;
+        const jobRowsPerPage = 8;
+        let filteredJobs = [...jobData];
+        let currentEditJobId = null;
+
+        // ========== CLOCK ==========
+        const clockDigits = { h1: '', h2: '', m1: '', m2: '', s1: '', s2: '' };
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const mins = now.getMinutes();
+            const secs = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            const h = String(hours).padStart(2, '0');
+            const m = String(mins).padStart(2, '0');
+            const s = String(secs).padStart(2, '0');
+            const newDigits = { h1: h[0], h2: h[1], m1: m[0], m2: m[1], s1: s[0], s2: s[1] };
+            Object.keys(newDigits).forEach(key => {
+                const el = document.getElementById(key);
+                if (clockDigits[key] !== newDigits[key]) {
+                    el.textContent = newDigits[key];
+                    el.classList.add('flip');
+                    setTimeout(() => el.classList.remove('flip'), 400);
+                }
+                clockDigits[key] = newDigits[key];
+            });
+            document.getElementById('ampm').textContent = ampm;
+        }
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+        updateClock();
+        updateDate();
+        setInterval(updateClock, 1000);
+
+        // ========== SIDEBAR ==========
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('closed');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.add('closed');
+            document.getElementById('sidebarOverlay').classList.add('hidden');
+        }
+
+        // ========== PAGE SWITCHING ==========
+        function switchPage(page) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === page) item.classList.add('active');
+            });
+            const titles = { 'dashboard': 'Dashboard', 'jobs': 'Jobs Management', 'create-user': 'Create User', 'create-job': 'Create Job', 'settings': 'Settings' };
+            document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
+            if (page === 'create-job') populateAssignUsers();
+            if (page === 'jobs') renderJobTable();
+            if (page === 'dashboard') { updateStats(); renderTable(); renderActivityFeed(); }
+            closeSidebar();
+        }
+
+        // ========== STATS ==========
+        function updateStats() {
+            document.getElementById('statTotalUsers').textContent = userData.length;
+            const activeJobs = jobData.filter(j => j.status === 'working').length;
+            document.getElementById('statActiveJobs').textContent = activeJobs;
+            const totalTasks = userData.reduce((sum, u) => sum + u.tasksCompleted, 0);
+            document.getElementById('statTasksCompleted').textContent = totalTasks;
+            const langs = [...new Set(userData.map(u => u.language))];
+            document.getElementById('statLanguages').textContent = langs.length;
+            document.getElementById('statLangActive').textContent = `${langs.length} active`;
+        }
+
+        // ========== ACTIVITY FEED ==========
+        function getActivityIcon(type) {
+            const icons = { task: 'check-circle-2', job: 'briefcase', status: 'refresh-cw', assign: 'user-check', user: 'user-plus' };
+            return icons[type] || 'activity';
+        }
+        function getActivityColor(type) {
+            const colors = { task: 'text-emerald-400 bg-emerald-400/10', job: 'text-purple-400 bg-purple-400/10', status: 'text-amber-400 bg-amber-400/10', assign: 'text-blue-400 bg-blue-400/10', user: 'text-indigo-400 bg-indigo-400/10' };
+            return colors[type] || 'text-white/40 bg-white/5';
+        }
+        function renderActivityFeed() {
+            const container = document.getElementById('activityFeed');
+            container.innerHTML = activityLog.map(a => `
+                <div class="activity-item flex items-start gap-3 p-3 rounded-xl">
+                    <div class="w-8 h-8 rounded-lg ${getActivityColor(a.type)} flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <i data-lucide="${getActivityIcon(a.type)}" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-white/70"><span class="font-medium text-white/90">${a.user}</span> ${a.action} <span class="text-indigo-300">${a.detail}</span></p>
+                        <p class="text-[10px] text-white/25 mt-0.5">${a.time}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+        function addActivity(type, user, action, detail) {
+            activityLog.unshift({ type, user, action, detail, time: 'Just now' });
+            if (activityLog.length > 20) activityLog.pop();
+        }
+
+        // ========== HELPERS ==========
+        function getAvatarColor(name) {
+            const colors = ['from-indigo-500 to-purple-500','from-blue-500 to-cyan-500','from-violet-500 to-pink-500','from-emerald-500 to-teal-500','from-amber-500 to-orange-500','from-rose-500 to-red-500'];
+            return colors[name.charCodeAt(0) % colors.length];
+        }
+        function getStatusBadge(status) {
+            const map = {
+                'completed': '<span class="badge-completed px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Completed</span>',
+                'working': '<span class="badge-working px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 pulse-dot"></span>Working</span>',
+                'paused': '<span class="badge-paused px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>Paused</span>',
+                'idle': '<span class="badge-idle px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-white/30"></span>Idle</span>',
+            };
+            return map[status] || map['idle'];
+        }
+        function getPriorityBadge(priority) {
+            const map = {
+                'urgent': '<span class="badge-urgent px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>Urgent</span>',
+                'high': '<span class="badge-high px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>High</span>',
+                'medium': '<span class="badge-medium px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Medium</span>',
+                'low': '<span class="badge-low px-2.5 py-1 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Low</span>',
+            };
+            return map[priority] || map['medium'];
+        }
+        function getLangFlag(lang) {
+            const flags = { EN: '🇬🇧', FR: '🇫🇷', ES: '🇪🇸', DE: '🇩🇪', ZH: '🇨🇳', JA: '🇯🇵', KO: '🇰🇷', PT: '🇧🇷', AR: '🇸🇦', HI: '🇮🇳', IT: '🇮🇹' };
+            return flags[lang] || '🌐';
+        }
+        function getLangName(code) {
+            const names = { EN: 'English', FR: 'French', ES: 'Spanish', DE: 'German', ZH: 'Chinese', JA: 'Japanese', KO: 'Korean', PT: 'Portuguese', AR: 'Arabic', HI: 'Hindi', IT: 'Italian' };
+            return names[code] || code;
+        }
+
+        // ========== USER TABLE ==========
+        function renderTable() {
+            const tbody = document.getElementById('userTableBody');
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = filteredData.slice(start, end);
+            tbody.innerHTML = pageData.map(user => `
+                <tr class="group">
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${getAvatarColor(user.name)} flex items-center justify-center text-white text-xs font-bold shadow-lg flex-shrink-0">
+                                ${user.avatar}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-white text-sm group-hover:text-indigo-300 transition-colors truncate">${user.name}</p>
+                                <p class="text-[11px] text-white/25 truncate">${user.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" style="width: ${Math.min(user.tasksCompleted, 100)}%"></div>
+                            </div>
+                            <span class="text-xs text-white/50 font-medium">${user.tasksCompleted}</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4 hidden md:table-cell">
+                        <p class="text-xs text-white/50 ${!user.workingOn ? 'italic text-white/20' : ''}">${user.workingOn || 'Not assigned'}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 text-xs font-medium text-white/60">
+                            <span class="text-sm">${getLangFlag(user.language)}</span>${user.language}
+                        </span>
+                    </td>
+                    <td class="px-5 py-4">${getStatusBadge(user.status)}</td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-1">
+                            <button onclick="openEditUserModal(${user.id})" class="btn-action w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-indigo-400 hover:bg-indigo-400/10 transition-all" title="Edit">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="handleQuickDeleteUser(${user.id})" class="btn-action w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all" title="Delete">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('showingCount').textContent = pageData.length;
+            document.getElementById('totalCount').textContent = filteredData.length;
+            renderPagination();
+            lucide.createIcons();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            const container = document.getElementById('pagination');
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+            let html = `<button onclick="goToPage(${currentPage - 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs text-white/40 hover:bg-white/5 transition-colors ${currentPage === 1 ? 'opacity-30 pointer-events-none' : ''}" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button onclick="goToPage(${i})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${i === currentPage ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-white/40 hover:bg-white/5'}">${i}</button>`;
+            }
+            html += `<button onclick="goToPage(${currentPage + 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs text-white/40 hover:bg-white/5 transition-colors ${currentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`;
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            filteredData = userData.filter(user => {
+                const matchSearch = user.name.toLowerCase().includes(search) || user.email.toLowerCase().includes(search) || (user.job && user.job.toLowerCase().includes(search)) || user.language.toLowerCase().includes(search);
+                const matchStatus = statusFilter === 'all' || user.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+            currentPage = 1;
+            renderTable();
+        }
+
+        // ========== JOB TABLE ==========
+        function renderJobTable() {
+            const tbody = document.getElementById('jobTableBody');
+            const start = (jobCurrentPage - 1) * jobRowsPerPage;
+            const end = start + jobRowsPerPage;
+            const pageData = filteredJobs.slice(start, end);
+            tbody.innerHTML = pageData.map(job => {
+                const assignedUser = userData.find(u => u.id === job.assignedTo);
+                return `
+                <tr class="group">
+                    <td class="px-5 py-4">
+                        <div class="min-w-0">
+                            <p class="font-medium text-white text-sm group-hover:text-indigo-300 transition-colors truncate">${job.title}</p>
+                            <p class="text-[11px] text-white/25 truncate mt-0.5">${job.description || 'No description'}</p>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <span class="inline-flex items-center gap-1.5 text-xs text-white/60">
+                            ${getLangFlag(job.sourceLang)} ${job.sourceLang} <i data-lucide="arrow-right" class="w-3 h-3 text-white/20"></i> ${getLangFlag(job.targetLang)} ${job.targetLang}
+                        </span>
+                    </td>
+                    <td class="px-5 py-4 hidden md:table-cell">
+                        ${assignedUser ? `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br ${getAvatarColor(assignedUser.name)} flex items-center justify-center text-white text-[9px] font-bold">${assignedUser.avatar}</div><span class="text-xs text-white/60">${assignedUser.name}</span></div>` : '<span class="text-xs text-white/20 italic">Unassigned</span>'}
+                    </td>
+                    <td class="px-5 py-4">${getPriorityBadge(job.priority)}</td>
+                    <td class="px-5 py-4 hidden sm:table-cell">
+                        <span class="text-xs text-white/40">${job.deadline ? new Date(job.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No deadline'}</span>
+                    </td>
+                    <td class="px-5 py-4">${getStatusBadge(job.status)}</td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-1">
+                            <button onclick="openJobModal(${job.id})" class="btn-action w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-indigo-400 hover:bg-indigo-400/10 transition-all" title="View">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="handleQuickDeleteJob(${job.id})" class="btn-action w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all" title="Delete">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('jobShowingCount').textContent = pageData.length;
+            document.getElementById('jobTotalCount').textContent = filteredJobs.length;
+            renderJobPagination();
+            lucide.createIcons();
+        }
+
+        function renderJobPagination() {
+            const totalPages = Math.ceil(filteredJobs.length / jobRowsPerPage);
+            const container = document.getElementById('jobPagination');
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+            let html = `<button onclick="goToJobPage(${jobCurrentPage - 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs text-white/40 hover:bg-white/5 transition-colors ${jobCurrentPage === 1 ? 'opacity-30 pointer-events-none' : ''}" ${jobCurrentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button onclick="goToJobPage(${i})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${i === jobCurrentPage ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-white/40 hover:bg-white/5'}">${i}</button>`;
+            }
+            html += `<button onclick="goToJobPage(${jobCurrentPage + 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-xs text-white/40 hover:bg-white/5 transition-colors ${jobCurrentPage === totalPages ? 'opacity-30 pointer-events-none' : ''}" ${jobCurrentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`;
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function goToJobPage(page) {
+            const totalPages = Math.ceil(filteredJobs.length / jobRowsPerPage);
+            if (page < 1 || page > totalPages) return;
+            jobCurrentPage = page;
+            renderJobTable();
+        }
+
+        function filterJobs() {
+            const search = document.getElementById('jobSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('jobStatusFilter').value;
+            filteredJobs = jobData.filter(job => {
+                const matchSearch = job.title.toLowerCase().includes(search) || (job.description && job.description.toLowerCase().includes(search)) || job.sourceLang.toLowerCase().includes(search) || job.targetLang.toLowerCase().includes(search);
+                const matchStatus = statusFilter === 'all' || job.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+            jobCurrentPage = 1;
+            renderJobTable();
+        }
+
+        // ========== USER MODAL ==========
+        function openEditUserModal(userId) {
+            const user = userData.find(u => u.id === userId);
+            if (!user) return;
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.name;
+            document.getElementById('editUserEmail').value = user.email;
+            document.getElementById('editUserLang').value = user.language;
+            document.getElementById('editUserStatus').value = user.status;
+            document.getElementById('editUserWorkingOn').value = user.workingOn || '';
+            document.getElementById('modalTitle').textContent = `Edit: ${user.name}`;
+            document.getElementById('userModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeUserModal() {
+            document.getElementById('userModal').classList.add('hidden');
+        }
+        function handleEditUser(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('editUserId').value);
+            const user = userData.find(u => u.id === id);
+            if (!user) return;
+            user.name = document.getElementById('editUserName').value.trim();
+            user.email = document.getElementById('editUserEmail').value.trim();
+            user.language = document.getElementById('editUserLang').value;
+            user.status = document.getElementById('editUserStatus').value;
+            user.workingOn = document.getElementById('editUserWorkingOn').value.trim() || null;
+            user.avatar = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            filteredData = [...userData];
+            renderTable();
+            updateStats();
+            closeUserModal();
+            addActivity('status', 'Admin', 'updated user', user.name);
+            renderActivityFeed();
+            showToast(`User "${user.name}" updated successfully!`, 'success');
+        }
+        function handleDeleteUser() {
+            const id = parseInt(document.getElementById('editUserId').value);
+            const user = userData.find(u => u.id === id);
+            if (!user) return;
+            const name = user.name;
+            const idx = userData.indexOf(user);
+            userData.splice(idx, 1);
+            filteredData = [...userData];
+            renderTable();
+            updateStats();
+            closeUserModal();
+            addActivity('user', 'Admin', 'deleted user', name);
+            renderActivityFeed();
+            showToast(`User "${name}" deleted.`, 'error');
+        }
+        function handleQuickDeleteUser(userId) {
+            const user = userData.find(u => u.id === userId);
+            if (!user) return;
+            if (confirm(`Delete user "${user.name}"?`)) {
+                const name = user.name;
+                const idx = userData.indexOf(user);
+                userData.splice(idx, 1);
+                filteredData = [...userData];
+                renderTable();
+                updateStats();
+                addActivity('user', 'Admin', 'deleted user', name);
+                renderActivityFeed();
+                showToast(`User "${name}" deleted.`, 'error');
+            }
+        }
+
+        // ========== JOB MODAL ==========
+        function openJobModal(jobId) {
+            const job = jobData.find(j => j.id === jobId);
+            if (!job) return;
+            currentEditJobId = job.id;
+            const assignedUser = userData.find(u => u.id === job.assignedTo);
+            document.getElementById('jobModalTitle').textContent = job.title;
+            document.getElementById('jobModalContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Source</p>
+                        <p class="text-sm font-medium">${getLangFlag(job.sourceLang)} ${getLangName(job.sourceLang)}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Target</p>
+                        <p class="text-sm font-medium">${getLangFlag(job.targetLang)} ${getLangName(job.targetLang)}</p>
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl bg-white/[0.03]">
+                    <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Description</p>
+                    <p class="text-sm text-white/70">${job.description || 'No description provided'}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Priority</p>
+                        ${getPriorityBadge(job.priority)}
+                    </div>
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Status</p>
+                        ${getStatusBadge(job.status)}
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Deadline</p>
+                        <p class="text-sm text-white/70">${job.deadline ? new Date(job.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not set'}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-white/[0.03]">
+                        <p class="text-[10px] text-white/30 uppercase tracking-wider mb-1">Assigned To</p>
+                        <p class="text-sm text-white/70">${assignedUser ? assignedUser.name : 'Unassigned'}</p>
+                    </div>
+                </div>
+            `;
+            const toggleBtn = document.getElementById('jobModalToggleBtn');
+            if (job.status === 'completed') {
+                toggleBtn.textContent = 'Reopen Job';
+            } else if (job.status === 'working') {
+                toggleBtn.textContent = 'Pause Job';
+            } else {
+                toggleBtn.textContent = 'Start Job';
+            }
+            document.getElementById('jobModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeJobModal() {
+            document.getElementById('jobModal').classList.add('hidden');
+            currentEditJobId = null;
+        }
+        function toggleJobStatus() {
+            const job = jobData.find(j => j.id === currentEditJobId);
+            if (!job) return;
+            if (job.status === 'working') job.status = 'paused';
+            else if (job.status === 'paused') job.status = 'working';
+            else job.status = 'working';
+            // Also update user status
+            if (job.assignedTo) {
+                const user = userData.find(u => u.id === job.assignedTo);
+                if (user) {
+                    if (job.status === 'working') { user.status = 'working'; user.workingOn = job.title; }
+                    else if (job.status === 'paused') { user.status = 'paused'; }
+                }
+            }
+            filteredJobs = [...jobData];
+            filteredData = [...userData];
+            renderJobTable();
+            updateStats();
+            addActivity('status', 'Admin', `changed job status to ${job.status}`, job.title);
+            renderActivityFeed();
+            closeJobModal();
+            showToast(`Job "${job.title}" status updated to ${job.status}.`, 'info');
+        }
+        function handleDeleteJob() {
+            const job = jobData.find(j => j.id === currentEditJobId);
+            if (!job) return;
+            const title = job.title;
+            const idx = jobData.indexOf(job);
+            jobData.splice(idx, 1);
+            filteredJobs = [...jobData];
+            renderJobTable();
+            updateStats();
+            closeJobModal();
+            addActivity('job', 'Admin', 'deleted job', title);
+            renderActivityFeed();
+            showToast(`Job "${title}" deleted.`, 'error');
+        }
+        function handleQuickDeleteJob(jobId) {
+            const job = jobData.find(j => j.id === jobId);
+            if (!job) return;
+            if (confirm(`Delete job "${job.title}"?`)) {
+                const title = job.title;
+                const idx = jobData.indexOf(job);
+                jobData.splice(idx, 1);
+                filteredJobs = [...jobData];
+                renderJobTable();
+                updateStats();
+                addActivity('job', 'Admin', 'deleted job', title);
+                renderActivityFeed();
+                showToast(`Job "${title}" deleted.`, 'error');
+            }
+        }
+
+        // ========== TOAST ==========
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            toastMessage.textContent = message;
+            if (type === 'success') { toast.style.background = 'rgba(34, 197, 94, 0.9)'; toastIcon.setAttribute('data-lucide', 'check-circle'); }
+            else if (type === 'error') { toast.style.background = 'rgba(239, 68, 68, 0.9)'; toastIcon.setAttribute('data-lucide', 'alert-circle'); }
+            else if (type === 'info') { toast.style.background = 'rgba(99, 102, 241, 0.9)'; toastIcon.setAttribute('data-lucide', 'info'); }
+            lucide.createIcons();
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ========== CREATE USER ==========
+        function handleCreateUser(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const lang = document.getElementById('userLang').value;
+            const newUser = {
+                id: Math.max(...userData.map(u => u.id), 0) + 1,
+                name: `${firstName} ${lastName}`,
+                email: email,
+                tasksCompleted: 0,
+                workingOn: null,
+                job: null,
+                language: lang,
+                status: 'idle',
+                avatar: (firstName[0] + lastName[0]).toUpperCase(),
+                role: document.getElementById('userRole').value
+            };
+            userData.push(newUser);
+            filteredData = [...userData];
+            renderTable();
+            updateStats();
+            document.getElementById('createUserForm').reset();
+            addActivity('user', 'Admin', 'created user', newUser.name);
+            renderActivityFeed();
+            showToast(`User "${firstName} ${lastName}" created successfully!`, 'success');
+        }
+
+        // ========== CREATE JOB ==========
+        function populateAssignUsers() {
+            const select = document.getElementById('assignUser');
+            select.innerHTML = '<option value="">Unassigned</option>';
+            userData.forEach(user => {
+                select.innerHTML += `<option value="${user.id}">${user.name} (${user.language})</option>`;
+            });
+        }
+        function handleCreateJob(e) {
+            e.preventDefault();
+            const title = document.getElementById('jobTitle').value.trim();
+            const sourceLang = document.getElementById('sourceLang').value;
+            const targetLang = document.getElementById('targetLang').value;
+            const assignId = document.getElementById('assignUser').value;
+            const priority = document.getElementById('jobPriority').value;
+            const deadline = document.getElementById('jobDeadline').value;
+            const desc = document.getElementById('jobDesc').value.trim();
+            const newJob = {
+                id: Math.max(...jobData.map(j => j.id), 0) + 1,
+                title,
+                sourceLang,
+                targetLang,
+                description: desc,
+                priority,
+                deadline: deadline || null,
+                status: assignId ? 'working' : 'paused',
+                assignedTo: assignId ? parseInt(assignId) : null
+            };
+            jobData.push(newJob);
+            if (assignId) {
+                const user = userData.find(u => u.id === parseInt(assignId));
+                if (user) {
+                    user.job = title;
+                    user.status = 'working';
+                    user.workingOn = title;
+                    filteredData = [...userData];
+                }
+            }
+            filteredJobs = [...jobData];
+            renderTable();
+            updateStats();
+            document.getElementById('createJobForm').reset();
+            addActivity('job', 'Admin', 'created job', title);
+            renderActivityFeed();
+            showToast(`Job "${title}" created successfully!`, 'success');
+        }
+
+        // ========== SETTINGS ==========
+        function handleSaveSettings(e) {
+            e.preventDefault();
+            showToast('Settings saved successfully!', 'success');
+        }
+        function handleResetData() {
+            if (confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
+                userData.length = 0;
+                jobData.length = 0;
+                activityLog.length = 0;
+                filteredData = [...userData];
+                filteredJobs = [...jobData];
+                renderTable();
+                renderJobTable();
+                updateStats();
+                renderActivityFeed();
+                showToast('All data has been reset.', 'error');
+            }
+        }
+
+        // ========== LOGOUT ==========
+        function handleLogout() {
+            showToast('Logging out...', 'info');
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+        }
+
+        // ========== MODAL CLICK OUTSIDE ==========
+        document.getElementById('userModal').addEventListener('click', function(e) {
+            if (e.target === this) closeUserModal();
+        });
+        document.getElementById('jobModal').addEventListener('click', function(e) {
+            if (e.target === this) closeJobModal();
+        });
+
+        // ========== INIT ==========
+        updateStats();
+        renderTable();
+        renderActivityFeed();
+    </script>
+</body>
+</html>

@@ -41,10 +41,9 @@ a {
 
 .auth-layout {
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1.08fr 0.92fr;
-    gap: 26px;
+    display: flex;
     align-items: center;
+    justify-content: center;
     padding: 32px 0;
 }
 
@@ -124,6 +123,7 @@ a {
     position: relative;
     overflow: hidden;
     min-height: 720px;
+    width: min(1240px, 100%);
     padding: 42px;
     border: 1px solid var(--line);
     background:
@@ -132,6 +132,8 @@ a {
         rgba(8, 17, 31, 0.66);
     box-shadow: var(--shadow);
     border-radius: 36px;
+    display: flex;
+    align-items: center;
 }
 
 .welcome-copy {
@@ -212,8 +214,12 @@ a {
 }
 
 .auth-panel {
+    position: absolute;
+    inset: 0;
     display: flex;
     justify-content: center;
+    align-items: center;
+    z-index: 3;
 }
 
 .modern-auth {
@@ -458,7 +464,6 @@ a {
 }
 
 @media (max-width: 980px) {
-    .auth-layout,
     .stats-grid,
     .content-grid {
         grid-template-columns: 1fr;
@@ -466,6 +471,11 @@ a {
 
     .signal-grid {
         grid-template-columns: 1fr;
+    }
+
+    .welcome-panel {
+        align-items: flex-start;
+        padding-top: 360px;
     }
 
     .topbar {
@@ -485,7 +495,7 @@ a {
 
     .welcome-panel {
         min-height: auto;
-        padding: 28px;
+        padding: 360px 28px 28px;
     }
 
     .login-card,

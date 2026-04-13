@@ -1,101 +1,317 @@
 {% extends "base.html" %}
 
 {% block title %}ValiText Login{% endblock %}
-{% block body_class %}auth-shell{% endblock %}
+{% block body_class %}min-h-screen relative overflow-hidden font-inter bg-[#070b17] text-white{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    inter: ["Inter", "sans-serif"],
+                },
+                boxShadow: {
+                    glow: "0 20px 80px rgba(79, 70, 229, 0.32)",
+                },
+            },
+        },
+    };
+</script>
+<style>
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        font-family: "Inter", sans-serif;
+        background: #070b17;
+    }
+
+    .bg-animated {
+        overflow: hidden;
+        isolation: isolate;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.18), transparent 26%),
+            radial-gradient(circle at 80% 25%, rgba(129, 140, 248, 0.2), transparent 26%),
+            radial-gradient(circle at 55% 80%, rgba(168, 85, 247, 0.18), transparent 24%),
+            linear-gradient(135deg, #050816 0%, #0d1430 50%, #11193d 100%);
+        background-size: 180% 180%;
+        animation: gradientShift 14s ease infinite;
+    }
+
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .orb {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(90px);
+        opacity: 0.45;
+        animation: float 10s ease-in-out infinite;
+    }
+
+    .orb-1 {
+        width: 320px;
+        height: 320px;
+        top: -90px;
+        left: -70px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.06));
+    }
+
+    .orb-2 {
+        width: 300px;
+        height: 300px;
+        right: -10px;
+        bottom: -20px;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.75), rgba(79, 70, 229, 0.06));
+        animation-delay: -3s;
+    }
+
+    .orb-3 {
+        width: 220px;
+        height: 220px;
+        top: 18%;
+        right: 14%;
+        background: radial-gradient(circle, rgba(34, 211, 238, 0.55), rgba(14, 165, 233, 0.04));
+        animation-delay: -5s;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(0, -18px, 0) scale(1.04); }
+    }
+
+    .glass-card {
+        background: rgba(12, 18, 40, 0.58);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+            0 24px 90px rgba(0, 0, 0, 0.38),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .input-field {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        transition: all 0.25s ease;
+    }
+
+    .input-field:focus {
+        outline: none;
+        border-color: rgba(129, 140, 248, 0.7);
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.14);
+    }
+
+    .input-field::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .text-plus-2-title {
+        font-size: calc(1.875rem + 2px);
+    }
+
+    .text-plus-2-section {
+        font-size: calc(1.5rem + 2px);
+    }
+
+    .text-plus-2-body {
+        font-size: calc(0.875rem + 2px);
+    }
+
+    .text-plus-2-pill {
+        font-size: calc(0.6875rem + 2px);
+    }
+
+    .text-plus-2-badge {
+        font-size: calc(0.75rem + 2px);
+    }
+
+    .text-plus-2-footer {
+        font-size: calc(0.75rem + 2px);
+    }
+
+    .text-plus-2-vertical {
+        font-size: calc(0.6875rem + 2px);
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed, #2563eb);
+        background-size: 180% 180%;
+        transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+        background-position: 100% 0;
+        transform: translateY(-1px);
+        box-shadow: 0 18px 40px rgba(99, 102, 241, 0.35);
+    }
+
+    .role-tile {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .role-input:checked + .role-tile {
+        border-color: rgba(129, 140, 248, 0.7);
+        background: rgba(99, 102, 241, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.24);
+    }
+
+    .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.25);
+        animation: particleFloat linear infinite;
+    }
+
+    @keyframes particleFloat {
+        0% { transform: translateY(100vh); opacity: 0; }
+        10% { opacity: 0.55; }
+        90% { opacity: 0.4; }
+        100% { transform: translateY(-120px); opacity: 0; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<main class="auth-layout">
-    <section class="welcome-panel">
-        <div class="welcome-copy">
-            <div class="brand-pill">Translation Validation System</div>
-            <h1>Anudarpan workspace for multilingual review teams.</h1>
-            <p>
-                A focused sign-in experience for translation governance, validation queues,
-                and release-ready language quality across English, Odia, and Hindi.
-            </p>
+<div class="bg-animated relative min-h-screen">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div id="particles" class="pointer-events-none absolute inset-0"></div>
 
-            <div class="language-strip">
-                <span>English</span>
-                <span>Odia</span>
-                <span>Hindi</span>
+    <div class="text-plus-2-vertical pointer-events-none fixed left-6 top-1/2 hidden -translate-y-1/2 uppercase tracking-[0.5em] text-white/10 xl:block [writing-mode:vertical-rl]">
+        Translation Validation System
+    </div>
+ 
+    <div class="text-plus-2-badge pointer-events-none absolute left-[7%] top-[16%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">EN</div>
+    <div class="text-plus-2-badge pointer-events-none absolute right-[11%] top-[20%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">OD</div>
+    <div class="text-plus-2-badge pointer-events-none absolute left-[18%] top-[33%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">KAS</div>
+    <div class="text-plus-2-badge pointer-events-none absolute right-[29%] top-[31%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">KOK</div>
+    <div class="text-plus-2-badge pointer-events-none absolute left-[11%] bottom-[22%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">HI</div>
+    <div class="text-plus-2-badge pointer-events-none absolute right-[10%] bottom-[24%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">PA</div>
+    <div class="text-plus-2-badge pointer-events-none absolute left-[31%] bottom-[18%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">TM</div>
+    <div class="text-plus-2-badge pointer-events-none absolute right-[17%] bottom-[42%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">TL</div>
+    <div class="text-plus-2-badge pointer-events-none absolute left-[41%] top-[14%] hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/50 lg:block">MAL</div>
+
+    <main class="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
+        <div class="w-full max-w-lg">
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-glow">
+                    <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 8l6-4 6 4"></path>
+                        <path d="M5 8v8l6 4 6-4V8"></path>
+                        <path d="M11 4v16"></path>
+                    </svg>
+                </div>
+                <h1 class="text-plus-2-title font-bold tracking-tight text-white">ValiText</h1>
+                <p class="text-plus-2-body mt-2 font-light text-white/40">Translation validation system interface</p>
             </div>
 
-            <div class="signal-grid">
-                <article class="signal-card">
-                    <span class="card-kicker">Admin access</span>
-                    <h2>Monitor every validation stream</h2>
-                    <p>Open the management dashboard for assignments, reporting, and escalations.</p>
-                </article>
-                <article class="signal-card">
-                    <span class="card-kicker">User access</span>
-                    <h2>Review segments with clarity</h2>
-                    <p>Jump straight into assigned tasks, terminology checks, and approval decisions.</p>
-                </article>
-            </div>
-        </div>
+            <div class="glass-card rounded-[28px] p-8 sm:p-9">
+                <div class="mb-6">
+                    <div class="text-plus-2-pill mb-3 inline-flex items-center rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1 font-semibold uppercase tracking-[0.24em] text-indigo-200">
+                        Login
+                    </div>
+                    <h2 class="text-plus-2-section font-semibold text-white">Welcome</h2>
+                    <p class="text-plus-2-body mt-2 text-white/45">Sign in with your account</p>
+                </div>
 
-        <div class="orb-stack" aria-hidden="true">
-            <div class="orb orb-large"></div>
-            <div class="orb orb-small"></div>
-            <div class="grid-glow"></div>
-        </div>
-    </section>
-
-    <section class="auth-panel modern-auth">
-        <form method="post" class="login-card">
+                <form method="post" class="space-y-5">
+            {% if error %}
+                    <div class="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                        {{ error }}
+                    </div>
+            {% endif %}
             {% csrf_token %}
-            <div class="login-head">
-                <p class="eyebrow">Secure access</p>
-                <h2>Login</h2>
-                <p class="muted">Use one portal and choose which workspace to load after sign-in.</p>
+                    <div>
+                        <label for="username" class="text-plus-2-body mb-2 block font-medium text-white/60">Username</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-white/25">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M20 21a8 8 0 1 0-16 0"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </span>
+                            <input id="username" name="username" type="text" placeholder="Enter your username" class="text-plus-2-body input-field w-full rounded-xl py-3 pl-11 pr-4 text-white" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="text-plus-2-body mb-2 block font-medium text-white/60">Password</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-white/25">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                                    <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
+                                </svg>
+                            </span>
+                            <input id="password" name="password" type="password" placeholder="Enter your password" class="text-plus-2-body input-field w-full rounded-xl py-3 pl-11 pr-14 text-white" required>
+                            <button type="button" id="togglePassword" class="text-plus-2-body absolute inset-y-0 right-0 flex items-center pr-4 font-medium text-white/35 transition hover:text-white/75" aria-label="Show password">
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-plus-2-body flex items-center justify-between text-white/45">
+                        <span>Existing users only</span>
+                        <span>Contact Admin for Credentials</span>
+                    </div>
+
+                    <button type="submit" class="text-plus-2-body btn-gradient flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white">
+                        <span>Login</span>
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="M13 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="my-6 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"></div>
+
+
+                <p class="text-plus-2-footer mt-6 text-center text-white/25">
+                    Translation Validation System
+                </p>
             </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
 
-            <label for="username">Username</label>
-            <input id="username" name="username" type="text" placeholder="Enter your username" required>
-
-            <label for="password">Password</label>
-            <div class="password-wrap">
-                <input id="password" name="password" type="password" placeholder="Enter your password" required>
-                <button type="button" class="password-toggle" data-target="password" aria-label="Show password">Show</button>
-            </div>
-
-            <fieldset class="role-switcher">
-                <legend>Access mode</legend>
-                <label class="role-option">
-                    <input type="radio" name="role" value="admin" checked>
-                    <span>
-                        <strong>Admin</strong>
-                        <small>Analytics, assignments, governance</small>
-                    </span>
-                </label>
-                <label class="role-option">
-                    <input type="radio" name="role" value="user">
-                    <span>
-                        <strong>User</strong>
-                        <small>Validation queue, feedback, approvals</small>
-                    </span>
-                </label>
-            </fieldset>
-
-            <button type="submit" class="primary-btn">Enter workspace</button>
-
-            <div class="login-foot">
-                <span>Existing users only</span>
-                <span>Role-based dashboard loading</span>
-            </div>
-        </form>
-    </section>
-</main>
-
+{% block extra_scripts %}
 <script>
-    document.querySelectorAll(".password-toggle").forEach((button) => {
-        button.addEventListener("click", () => {
-            const input = document.getElementById(button.dataset.target);
-            const showing = input.type === "text";
-            input.type = showing ? "password" : "text";
-            button.textContent = showing ? "Show" : "Hide";
-            button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-        });
+    const particlesContainer = document.getElementById("particles");
+    for (let i = 0; i < 24; i += 1) {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
+        particle.style.animationDelay = `${Math.random() * 6}s`;
+        particle.style.opacity = `${Math.random() * 0.3 + 0.1}`;
+        particle.style.width = `${Math.random() * 2 + 1}px`;
+        particle.style.height = particle.style.width;
+        particlesContainer.appendChild(particle);
+    }
+
+    const togglePasswordButton = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+
+    togglePasswordButton.addEventListener("click", () => {
+        const showing = passwordInput.type === "text";
+        passwordInput.type = showing ? "password" : "text";
+        togglePasswordButton.textContent = showing ? "Show" : "Hide";
+        togglePasswordButton.setAttribute("aria-label", showing ? "Show password" : "Hide password");
     });
 </script>
 {% endblock %}
