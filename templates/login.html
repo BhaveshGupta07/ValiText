@@ -5,45 +5,62 @@
 
 {% block content %}
 <main class="auth-layout">
-    <section class="auth-hero">
-        <div class="brand-pill">Translation Validation System</div>
-        <h1>One login experience, role-based workspaces.</h1>
-        <p>
-            Sign in once and load the right template for your job. Admins get operational control,
-            while validators get a focused review workflow.
-        </p>
+    <section class="welcome-panel">
+        <div class="welcome-copy">
+            <div class="brand-pill">Translation Validation System</div>
+            <h1>Anudarpan workspace for multilingual review teams.</h1>
+            <p>
+                A focused sign-in experience for translation governance, validation queues,
+                and release-ready language quality across English, Odia, and Hindi.
+            </p>
 
-        <div class="hero-grid">
-            <article class="glass-card">
-                <span class="card-kicker">Admin mode</span>
-                <h2>Govern quality at scale</h2>
-                <p>Monitor throughput, assign review queues, and resolve translation risks before release.</p>
-            </article>
-            <article class="glass-card">
-                <span class="card-kicker">User mode</span>
-                <h2>Validate with speed</h2>
-                <p>Review segments, confirm language accuracy, and submit decisions from a clean workspace.</p>
-            </article>
+            <div class="language-strip">
+                <span>English</span>
+                <span>Odia</span>
+                <span>Hindi</span>
+            </div>
+
+            <div class="signal-grid">
+                <article class="signal-card">
+                    <span class="card-kicker">Admin access</span>
+                    <h2>Monitor every validation stream</h2>
+                    <p>Open the management dashboard for assignments, reporting, and escalations.</p>
+                </article>
+                <article class="signal-card">
+                    <span class="card-kicker">User access</span>
+                    <h2>Review segments with clarity</h2>
+                    <p>Jump straight into assigned tasks, terminology checks, and approval decisions.</p>
+                </article>
+            </div>
+        </div>
+
+        <div class="orb-stack" aria-hidden="true">
+            <div class="orb orb-large"></div>
+            <div class="orb orb-small"></div>
+            <div class="grid-glow"></div>
         </div>
     </section>
 
-    <section class="auth-panel">
+    <section class="auth-panel modern-auth">
         <form method="post" class="login-card">
             {% csrf_token %}
-            <div>
+            <div class="login-head">
                 <p class="eyebrow">Secure access</p>
-                <h2>Welcome back</h2>
-                <p class="muted">Choose the account type to open the correct dashboard template.</p>
+                <h2>Login</h2>
+                <p class="muted">Use one portal and choose which workspace to load after sign-in.</p>
             </div>
 
             <label for="username">Username</label>
             <input id="username" name="username" type="text" placeholder="Enter your username" required>
 
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" placeholder="Enter your password" required>
+            <div class="password-wrap">
+                <input id="password" name="password" type="password" placeholder="Enter your password" required>
+                <button type="button" class="password-toggle" data-target="password" aria-label="Show password">Show</button>
+            </div>
 
             <fieldset class="role-switcher">
-                <legend>Login as</legend>
+                <legend>Access mode</legend>
                 <label class="role-option">
                     <input type="radio" name="role" value="admin" checked>
                     <span>
@@ -61,7 +78,24 @@
             </fieldset>
 
             <button type="submit" class="primary-btn">Enter workspace</button>
+
+            <div class="login-foot">
+                <span>Existing users only</span>
+                <span>Role-based dashboard loading</span>
+            </div>
         </form>
     </section>
 </main>
+
+<script>
+    document.querySelectorAll(".password-toggle").forEach((button) => {
+        button.addEventListener("click", () => {
+            const input = document.getElementById(button.dataset.target);
+            const showing = input.type === "text";
+            input.type = showing ? "password" : "text";
+            button.textContent = showing ? "Show" : "Hide";
+            button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+        });
+    });
+</script>
 {% endblock %}
