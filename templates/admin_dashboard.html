@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block body_class %}dashboard-shell{% endblock %}
+
+{% block content %}
+<main class="dashboard-page">
+    <section class="topbar">
+        <div>
+            <p class="eyebrow">Admin workspace</p>
+            <h1>{{ display_name }}</h1>
+            <p class="muted">Control the validation program, team activity, and translation quality trends.</p>
+        </div>
+        <div class="topbar-actions">
+            <span class="status-chip">{{ role_label }}</span>
+            <a href="{% url 'logout' %}" class="secondary-btn">Logout</a>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <article class="metric-card">
+            <span>Pending reviews</span>
+            <strong>128</strong>
+            <p>Across product, support, and legal content streams.</p>
+        </article>
+        <article class="metric-card">
+            <span>Accuracy score</span>
+            <strong>96.4%</strong>
+            <p>Average quality benchmark across current language pairs.</p>
+        </article>
+        <article class="metric-card">
+            <span>Active validators</span>
+            <strong>24</strong>
+            <p>People currently reviewing in the last 30 minutes.</p>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="workspace-card wide">
+            <div class="section-heading">
+                <h2>Operational overview</h2>
+                <span>Live insights</span>
+            </div>
+            <div class="timeline-list">
+                <div>
+                    <strong>Spanish UI rollout flagged 3 high-priority terms</strong>
+                    <p>Term mismatches detected in payment and subscription flows.</p>
+                </div>
+                <div>
+                    <strong>German support batch completed ahead of SLA</strong>
+                    <p>Review cycle closed with zero escalations and full approval.</p>
+                </div>
+                <div>
+                    <strong>French marketing queue reassigned</strong>
+                    <p>Balancing workload to reduce review backlog before campaign launch.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="workspace-card">
+            <div class="section-heading">
+                <h2>Admin actions</h2>
+                <span>Quick controls</span>
+            </div>
+            <ul class="action-list">
+                <li>Create validation projects</li>
+                <li>Assign language owners</li>
+                <li>Audit decision history</li>
+                <li>Export quality reports</li>
+            </ul>
+        </article>
+    </section>
+</main>
+{% endblock %}

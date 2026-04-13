@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}ValiText Login{% endblock %}
+{% block body_class %}auth-shell{% endblock %}
+
+{% block content %}
+<main class="auth-layout">
+    <section class="auth-hero">
+        <div class="brand-pill">Translation Validation System</div>
+        <h1>One login experience, role-based workspaces.</h1>
+        <p>
+            Sign in once and load the right template for your job. Admins get operational control,
+            while validators get a focused review workflow.
+        </p>
+
+        <div class="hero-grid">
+            <article class="glass-card">
+                <span class="card-kicker">Admin mode</span>
+                <h2>Govern quality at scale</h2>
+                <p>Monitor throughput, assign review queues, and resolve translation risks before release.</p>
+            </article>
+            <article class="glass-card">
+                <span class="card-kicker">User mode</span>
+                <h2>Validate with speed</h2>
+                <p>Review segments, confirm language accuracy, and submit decisions from a clean workspace.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <form method="post" class="login-card">
+            {% csrf_token %}
+            <div>
+                <p class="eyebrow">Secure access</p>
+                <h2>Welcome back</h2>
+                <p class="muted">Choose the account type to open the correct dashboard template.</p>
+            </div>
+
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" placeholder="Enter your username" required>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Enter your password" required>
+
+            <fieldset class="role-switcher">
+                <legend>Login as</legend>
+                <label class="role-option">
+                    <input type="radio" name="role" value="admin" checked>
+                    <span>
+                        <strong>Admin</strong>
+                        <small>Analytics, assignments, governance</small>
+                    </span>
+                </label>
+                <label class="role-option">
+                    <input type="radio" name="role" value="user">
+                    <span>
+                        <strong>User</strong>
+                        <small>Validation queue, feedback, approvals</small>
+                    </span>
+                </label>
+            </fieldset>
+
+            <button type="submit" class="primary-btn">Enter workspace</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

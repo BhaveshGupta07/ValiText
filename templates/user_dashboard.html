@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+{% block body_class %}dashboard-shell{% endblock %}
+
+{% block content %}
+<main class="dashboard-page user-theme">
+    <section class="topbar">
+        <div>
+            <p class="eyebrow">Validation workspace</p>
+            <h1>{{ display_name }}</h1>
+            <p class="muted">Review translations, confirm terminology, and keep your queue moving.</p>
+        </div>
+        <div class="topbar-actions">
+            <span class="status-chip">{{ role_label }}</span>
+            <a href="{% url 'logout' %}" class="secondary-btn">Logout</a>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <article class="metric-card">
+            <span>Assigned tasks</span>
+            <strong>18</strong>
+            <p>Items waiting for your validation across 3 projects.</p>
+        </article>
+        <article class="metric-card">
+            <span>Completed today</span>
+            <strong>42</strong>
+            <p>Approved or corrected translation segments this shift.</p>
+        </article>
+        <article class="metric-card">
+            <span>Consistency rate</span>
+            <strong>98.1%</strong>
+            <p>Term compliance in your recent review decisions.</p>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="workspace-card wide">
+            <div class="section-heading">
+                <h2>Current queue</h2>
+                <span>Priority items</span>
+            </div>
+            <div class="queue-list">
+                <div class="queue-row">
+                    <strong>Checkout confirmation strings</strong>
+                    <span>Spanish</span>
+                    <em>High priority</em>
+                </div>
+                <div class="queue-row">
+                    <strong>Knowledge base updates</strong>
+                    <span>French</span>
+                    <em>Medium priority</em>
+                </div>
+                <div class="queue-row">
+                    <strong>Mobile onboarding tips</strong>
+                    <span>German</span>
+                    <em>Ready to review</em>
+                </div>
+            </div>
+        </article>
+
+        <article class="workspace-card">
+            <div class="section-heading">
+                <h2>Your toolkit</h2>
+                <span>Daily flow</span>
+            </div>
+            <ul class="action-list">
+                <li>Open assigned segments</li>
+                <li>Flag terminology issues</li>
+                <li>Leave reviewer comments</li>
+                <li>Submit approval decisions</li>
+            </ul>
+        </article>
+    </section>
+</main>
+{% endblock %}
