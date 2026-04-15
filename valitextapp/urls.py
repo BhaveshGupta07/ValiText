@@ -31,6 +31,6 @@ urlpatterns = [
     path("workspace/", user_dashboard, name="user-dashboard"),
     path("workspace/jobs/", user_jobs, name="user-jobs"),
     path("workspace/assigned/", user_assigned_jobs, name="user-assigned-jobs"),
-    path("workspace/job/<int:job_id>/", user_job_detail, name="user-job-detail"),
+    path("workspace/job/<uuid:job_id>/", user_job_detail, name="user-job-detail"),
     path("login/", login_view, name="login"),
 ]
