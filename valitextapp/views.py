@@ -5,12 +5,7 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
-<<<<<<< HEAD
 from django.utils import timezone
-=======
-from django.core.paginator import Paginator
-
->>>>>>> dce21d38ed818df0b203c1023f1d5640b01a1057
 
 from .forms import AdminUserForm, JobCreateForm
 from .models import UserProfile, Job, Sentence
