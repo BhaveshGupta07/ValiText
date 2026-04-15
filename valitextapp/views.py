@@ -70,7 +70,7 @@ def user_dashboard(request):
     job_data = []
     for idx, job in enumerate(assigned_jobs_qs, start=1):
         total = job.sentences.count()
-        done = job.sentences.filter(edit_made=True).count()
+        done = job.sentences.filter(status="done").count()
 
         status = "Completed" if total > 0 and done == total else "Pending"
 
@@ -95,7 +95,6 @@ def user_dashboard(request):
         },
         "page_obj": page_obj
     }
-    print("Assigned jobs:", assigned_jobs_qs)
     return render(request, "user/dashboard.html", context)
 
 
@@ -232,18 +231,15 @@ def admin_settings(request: HttpRequest) -> HttpResponse:
     return render(request, "admin_settings.html")
 
 @login_required
-def user_dashboard(request):
-    return render(request, "user/dashboard.html")
-
-
-@login_required
 def user_jobs(request):
     if request.method == "POST":
         job_id = request.POST.get("job_id")
-        job = Job.objects.get(job_id=job_id)
+        job = get_object_or_404(Job, job_id=job_id, validated_by__isnull=True)
 
         job.validated_by = request.user   # ✅ THIS IS REQUIRED
         job.save()
+
+        return redirect("user-assigned-jobs")
 
     jobs = Job.objects.filter(validated_by__isnull=True)
 
