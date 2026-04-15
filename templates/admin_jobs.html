@@ -44,7 +44,13 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'admin-job-assignments' job.job_id %}" class="btn-secondary rounded-xl px-3 py-2 text-xs font-semibold">Manage Assignment</a>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{% url 'admin-job-assignments' job.job_id %}" class="btn-secondary rounded-xl px-3 py-2 text-xs font-semibold">Manage Assignment</a>
+                                <form method="post" action="{% url 'admin-job-delete' job.job_id %}" onsubmit="return confirm('Delete this entire job and all related sentence data? This cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 {% empty %}

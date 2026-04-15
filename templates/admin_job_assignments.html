@@ -82,7 +82,7 @@
                             <td>{{ row.pending_count }}</td>
                             <td>
                                 {% if row.edited_count %}
-                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'edited' %}" class="font-semibold text-indigo-600 hover:underline" title="Download edited sentences as TXT">
+                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'edited' %}" class="font-semibold text-indigo-600 hover:underline" title="Download edited sentences as Excel">
                                         {{ row.edited_count }}
                                     </a>
                                 {% else %}
@@ -91,7 +91,7 @@
                             </td>
                             <td>
                                 {% if row.done_count %}
-                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'done' %}" class="font-semibold text-emerald-600 hover:underline" title="Download done sentences as TXT">
+                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'done' %}" class="font-semibold text-emerald-600 hover:underline" title="Download done sentences as Excel">
                                         {{ row.done_count }}
                                     </a>
                                 {% else %}

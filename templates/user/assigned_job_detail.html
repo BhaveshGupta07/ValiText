@@ -2,22 +2,6 @@
 
 {% block content %}
 <style>
-  .diff-added {
-    background-color: #dcfce7;
-    color: #166534;
-    border-radius: 4px;
-    padding: 1px 4px;
-  }
-
-  .diff-removed {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border-radius: 4px;
-    padding: 1px 4px;
-    text-decoration: line-through;
-    opacity: 0.8;
-  }
-
   .card-enter {
     animation: cardSlideIn 0.35s ease-out forwards;
     opacity: 0;
@@ -98,15 +82,15 @@
         <div class="grid grid-cols-3 gap-3">
           <div class="rounded-xl bg-slate-100 px-4 py-3">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Pending</p>
-            <p class="mt-1 text-lg font-bold text-slate-900">{{ remaining_count }}</p>
+            <p id="remaining-count" class="mt-1 text-lg font-bold text-slate-900">{{ remaining_count }}</p>
           </div>
           <div class="rounded-xl bg-slate-100 px-4 py-3">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Edited</p>
-            <p class="mt-1 text-lg font-bold text-indigo-600">{{ edited_count }}</p>
+            <p id="edited-count" class="mt-1 text-lg font-bold text-indigo-600">{{ edited_count }}</p>
           </div>
           <div class="rounded-xl bg-slate-100 px-4 py-3">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Done</p>
-            <p class="mt-1 text-lg font-bold text-emerald-600">{{ done_count }}</p>
+            <p id="done-count" class="mt-1 text-lg font-bold text-emerald-600">{{ done_count }}</p>
           </div>
         </div>
       </div>
@@ -114,10 +98,10 @@
       <div class="mt-5">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-slate-600">Validation Progress</span>
-          <span class="text-sm font-bold text-indigo-600">{{ progress_percent }}%</span>
+          <span id="progress-text" class="text-sm font-bold text-indigo-600">{{ progress_percent }}%</span>
         </div>
         <div class="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
-          <div class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-all duration-300" style="width: {{ progress_percent }}%;"></div>
+          <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-all duration-300" style="width: {{ progress_percent }}%;"></div>
         </div>
       </div>
     </div>
@@ -128,9 +112,10 @@
 
       {% for s in sentences %}
       <div
-        class="sentence-card card-enter w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+        class="sentence-card card-enter w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_38px_rgba(15,23,42,0.12)] transition-all duration-200 hover:shadow-[0_20px_48px_rgba(15,23,42,0.18)]"
         data-sentence-id="{{ s.sentence_id }}"
         data-original="{{ s.tgt_sentence|escapejs }}"
+        data-save-url="{% url 'user-sentence-save' job.job_id s.sentence_id %}"
         data-index="{{ forloop.counter0 }}"
       >
         <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3">
@@ -186,27 +171,10 @@
             </div>
           </div>
 
-          <div>
-            <div class="mb-1 flex items-center justify-between">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Diff Preview</p>
-              <div class="flex items-center gap-3 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1">
-                  <span class="h-2 w-2 rounded-sm bg-green-300"></span> Added
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="h-2 w-2 rounded-sm bg-red-300"></span> Removed
-                </span>
-              </div>
-            </div>
-            <div
-              class="diffOutput rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm leading-relaxed text-slate-800"
-              id="diff-{{ s.sentence_id }}"
-            ></div>
-          </div>
         </div>
 
         <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
-          <p class="text-xs text-slate-500">Edit freely. Mark done when the translation is ready.</p>
+          <p class="text-xs text-slate-500">Edits autosave. Mark done when the translation is ready.</p>
           <span class="status-badge rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600" id="badge-{{ s.sentence_id }}">
             Pending
           </span>
@@ -218,31 +186,8 @@
         <div class="text-sm text-slate-600">
           Page {{ page_obj.number|default:1 }} of {{ page_obj.paginator.num_pages|default:1 }}
         </div>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            id="reset-btn"
-            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-          >
-            Reset All
-          </button>
-          <button
-            type="submit"
-            name="action"
-            value="draft"
-            class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
-          >
-            Save as Draft
-          </button>
-          <button
-            type="submit"
-            name="action"
-            value="submit_page"
-            id="submit-page-btn"
-            class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-          >
-            Submit Current Page
-          </button>
+        <div class="text-xs font-medium text-slate-500">
+          Autosave enabled
         </div>
       </div>
     </form>
@@ -280,90 +225,13 @@
 </div>
 
 <script>
-  function escapeHTML(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function normalizeText(text) {
-    return text
-      .replace(/\\u002D/g, "-")
-      .replace(/–|—/g, "-")
-      .normalize("NFC")
-      .trim();
-  }
-
-  function tokenize(text) {
-    return text.split(/(\s+)/);
-  }
-
-  function computeDiff(original, edited) {
-    const origWords = tokenize(original);
-    const editWords = tokenize(edited);
-
-    const m = origWords.length;
-    const n = editWords.length;
-    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        if (origWords[i - 1] === editWords[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
-        } else {
-          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-        }
-      }
-    }
-
-    const diff = [];
-    let i = m, j = n;
-
-    while (i > 0 || j > 0) {
-      if (i > 0 && j > 0 && origWords[i - 1] === editWords[j - 1]) {
-        diff.unshift({ type: "same", word: origWords[i - 1] });
-        i--;
-        j--;
-      } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-        diff.unshift({ type: "added", word: editWords[j - 1] });
-        j--;
-      } else {
-        diff.unshift({ type: "removed", word: origWords[i - 1] });
-        i--;
-      }
-    }
-
-    return diff;
-  }
-
-  function renderDiffHTML(original, edited) {
-    if (normalizeText(original) === normalizeText(edited)) {
-      return '<span class="text-slate-400">No changes yet</span>';
-    }
-
-    original = normalizeText(original);
-    edited = normalizeText(edited);
-
-    const diff = computeDiff(original, edited);
-    let html = "";
-
-    diff.forEach(item => {
-      if (item.type === "same") {
-        html += escapeHTML(item.word);
-      } else if (item.type === "added") {
-        html += `<span class="diff-added">${escapeHTML(item.word)}</span>`;
-      } else if (item.type === "removed") {
-        html += `<span class="diff-removed">${escapeHTML(item.word)}</span>`;
-      }
-    });
-
-    return html;
+  function getCsrfToken() {
+    return document.querySelector("[name=csrfmiddlewaretoken]").value;
   }
 
   function showToast(message, type = "info") {
     const container = document.getElementById("toast-container");
     const toast = document.createElement("div");
-
     const styles = {
       success: "bg-emerald-600",
       error: "bg-red-600",
@@ -372,7 +240,6 @@
 
     toast.className = `toast-enter flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg ${styles[type] || styles.info}`;
     toast.innerHTML = message;
-
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -382,11 +249,36 @@
     }, 2200);
   }
 
+  function updateGlobalStats(data) {
+    document.getElementById("remaining-count").textContent = data.remaining_count;
+    document.getElementById("edited-count").textContent = data.edited_count;
+    document.getElementById("done-count").textContent = data.done_count;
+    document.getElementById("progress-text").textContent = `${data.progress_percent}%`;
+    document.getElementById("progress-bar").style.width = `${data.progress_percent}%`;
+  }
+
+  function applyTextareaState(textarea, edited, done) {
+    textarea.classList.remove(
+      "border-slate-200", "bg-white",
+      "border-indigo-300", "bg-indigo-50",
+      "border-emerald-300", "bg-emerald-50",
+      "focus:border-indigo-400", "focus:ring-indigo-100",
+      "focus:border-emerald-400", "focus:ring-emerald-100"
+    );
+
+    if (done) {
+      textarea.classList.add("border-emerald-300", "bg-emerald-50", "focus:border-emerald-400", "focus:ring-emerald-100");
+    } else if (edited) {
+      textarea.classList.add("border-indigo-300", "bg-indigo-50", "focus:border-indigo-400", "focus:ring-indigo-100");
+    } else {
+      textarea.classList.add("border-slate-200", "bg-white", "focus:border-indigo-400", "focus:ring-indigo-100");
+    }
+  }
+
   function updateCardState(card) {
     const id = card.dataset.sentenceId;
     const textarea = document.getElementById(`edit-${id}`);
     const original = card.dataset.original;
-    const diffBox = document.getElementById(`diff-${id}`);
     const charCount = document.getElementById(`char-count-${id}`);
     const wordCount = document.getElementById(`word-count-${id}`);
     const statusInput = document.getElementById(`status-${id}`);
@@ -398,9 +290,9 @@
     const edited = value.trim() !== original.trim();
     const done = statusInput.value === "done";
 
-    diffBox.innerHTML = renderDiffHTML(original, value);
     charCount.textContent = `${value.length} characters`;
     wordCount.textContent = `${value.trim() ? value.trim().split(/\s+/).length : 0} words`;
+    applyTextareaState(textarea, edited, done);
 
     if (done) {
       card.classList.add("ring-1", "ring-emerald-200", "border-emerald-300", "bg-emerald-50/30");
@@ -419,8 +311,41 @@
     }
   }
 
-  function updateStats() {
-    // Global totals and progress are rendered by the server after each save.
+  async function saveSentence(card, { silent = true } = {}) {
+    const id = card.dataset.sentenceId;
+    const textarea = document.getElementById(`edit-${id}`);
+    const statusInput = document.getElementById(`status-${id}`);
+
+    try {
+      const response = await fetch(card.dataset.saveUrl, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCsrfToken(),
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          text: textarea.value,
+          status: statusInput.value
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Unable to save sentence.");
+      }
+
+      statusInput.value = data.status;
+      updateCardState(card);
+      updateGlobalStats(data);
+      if (!silent) showToast("Sentence saved", "success");
+    } catch (error) {
+      showToast(error.message || "Unable to save sentence.", "error");
+    }
+  }
+
+  function saveVisibleSentences() {
+    const cards = Array.from(document.querySelectorAll(".sentence-card"));
+    return Promise.all(cards.map(card => saveSentence(card)));
   }
 
   function initCards() {
@@ -429,20 +354,28 @@
       const textarea = document.getElementById(`edit-${id}`);
       const doneBtn = card.querySelector(".mark-done-btn");
       const statusInput = document.getElementById(`status-${id}`);
+      let saveTimer;
 
       card.style.animationDelay = `${index * 45}ms`;
-
       updateCardState(card);
 
       textarea.addEventListener("input", () => {
+        if (statusInput.value === "done") statusInput.value = "pending";
         updateCardState(card);
-        updateStats();
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveSentence(card), 700);
+      });
+
+      textarea.addEventListener("blur", () => {
+        clearTimeout(saveTimer);
+        saveSentence(card);
       });
 
       doneBtn.addEventListener("click", () => {
         statusInput.value = statusInput.value === "done" ? "pending" : "done";
         updateCardState(card);
-        updateStats();
+        clearTimeout(saveTimer);
+        saveSentence(card);
         showToast(
           statusInput.value === "done" ? `Sentence ${id} marked done` : `Sentence ${id} reopened`,
           "info"
@@ -450,39 +383,14 @@
       });
     });
 
-    updateStats();
+    document.querySelectorAll('a[href^="?page="]').forEach(link => {
+      link.addEventListener("click", async event => {
+        event.preventDefault();
+        await saveVisibleSentences();
+        window.location.href = link.href;
+      });
+    });
   }
-
-  document.getElementById("reset-btn").addEventListener("click", () => {
-    if (!confirm("Reset all edits and done states?")) return;
-
-    document.querySelectorAll(".sentence-card").forEach(card => {
-      const id = card.dataset.sentenceId;
-      const textarea = document.getElementById(`edit-${id}`);
-      const statusInput = document.getElementById(`status-${id}`);
-
-      textarea.value = card.dataset.original;
-      statusInput.value = "pending";
-      updateCardState(card);
-    });
-
-    updateStats();
-    showToast("All changes reset", "success");
-  });
-
-  document.getElementById("validation-form").addEventListener("submit", event => {
-    if (event.submitter?.value !== "submit_page") return;
-
-    document.querySelectorAll(".sentence-card").forEach(card => {
-      const id = card.dataset.sentenceId;
-      const statusInput = document.getElementById(`status-${id}`);
-
-      statusInput.value = "done";
-      updateCardState(card);
-    });
-
-    updateStats();
-  });
 
   initCards();
 </script>

@@ -2,12 +2,14 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from io import BytesIO
+from openpyxl import Workbook
 
 from .forms import AdminUserForm, JobAssignmentForm, JobCreateForm
 from .models import UserProfile, Job, Sentence
@@ -302,6 +304,24 @@ def admin_jobs(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="login")
+def admin_job_delete(request: HttpRequest, job_id) -> HttpResponse:
+    if not request.user.is_superuser:
+        return redirect("user-dashboard")
+    if request.method != "POST":
+        return redirect("admin-jobs")
+
+    job = get_object_or_404(Job, job_id=job_id)
+    job_name = job.name
+    sentence_count = job.sentences.count()
+    job.delete()
+    messages.success(
+        request,
+        f'Job "{job_name}" and its {sentence_count} related sentences were deleted successfully.',
+    )
+    return redirect("admin-jobs")
+
+
+@login_required(login_url="login")
 def admin_create_job(request: HttpRequest) -> HttpResponse:
     if not request.user.is_superuser:
         return redirect("user-dashboard")
@@ -410,17 +430,31 @@ def admin_assignment_download(request: HttpRequest, job_id, user_id, status) -> 
         status=status,
     ).order_by("sentence_number", "sentence_id")
 
-    lines = [
-        (sentence.validated_translation or sentence.tgt_sentence or "").replace("\r\n", "\n").replace("\r", "\n")
-        for sentence in sentences
-    ]
-    content = "\n".join(lines)
-    if content:
-        content += "\n"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = status.title()
+    worksheet.append(["Sentence No", "Source Sentence", "Edited Sentence"])
+    for sentence in sentences:
+        worksheet.append([
+            sentence.sentence_number,
+            sentence.src_sentence,
+            sentence.validated_translation or sentence.tgt_sentence or "",
+        ])
+
+    worksheet.column_dimensions["A"].width = 14
+    worksheet.column_dimensions["B"].width = 70
+    worksheet.column_dimensions["C"].width = 70
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
 
     safe_job_name = "".join(char if char.isalnum() or char in ("-", "_") else "_" for char in job.name)[:60]
-    filename = f"{safe_job_name}_{user.username}_{status}_{sentences.count()}_sentences.txt"
-    response = HttpResponse(content, content_type="text/plain; charset=utf-8")
+    filename = f"{safe_job_name}_{user.username}_{status}_{sentences.count()}_sentences.xlsx"
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
@@ -469,6 +503,58 @@ def build_page_items(page_obj):
 
 
 @login_required
+def user_sentence_save(request, job_id, sentence_id):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required."}, status=405)
+
+    sentence = get_object_or_404(
+        Sentence,
+        sentence_id=sentence_id,
+        job_id=job_id,
+        assigned_to=request.user,
+    )
+
+    edited = request.POST.get("text", "")
+    requested_status = request.POST.get("status", "pending")
+    edit_made = edited.strip() != sentence.tgt_sentence.strip()
+
+    if requested_status == "done":
+        next_status = "done"
+    else:
+        next_status = "edited" if edit_made else "pending"
+
+    sentence.validated_translation = edited
+    sentence.edit_made = edit_made
+    sentence.status = next_status
+    sentence.validated_by = request.user
+    sentence.final_date = timezone.now() if next_status == "done" else None
+    sentence.save()
+
+    assigned_sentences = Sentence.objects.filter(job_id=job_id, assigned_to=request.user)
+    total_count = assigned_sentences.count()
+    done_count = assigned_sentences.filter(status="done").count()
+    edited_count = assigned_sentences.filter(edit_made=True).count()
+    remaining_count = assigned_sentences.exclude(status="done").count()
+    progress_percent = round((done_count / total_count) * 100) if total_count else 0
+
+    job = sentence.job
+    all_done = job.sentences.exists() and job.sentences.filter(status="done").count() == job.sentences.count()
+    job.edit_made = all_done
+    job.final_date = timezone.now() if all_done else None
+    job.save(update_fields=["edit_made", "final_date"])
+
+    return JsonResponse({
+        "ok": True,
+        "status": next_status,
+        "edit_made": edit_made,
+        "remaining_count": remaining_count,
+        "done_count": done_count,
+        "edited_count": edited_count,
+        "progress_percent": progress_percent,
+    })
+
+
+@login_required
 def user_job_detail(request, job_id):
     job = get_object_or_404(Job, job_id=job_id)
     sentence_queryset = Sentence.objects.filter(
@@ -479,42 +565,17 @@ def user_job_detail(request, job_id):
         raise Http404("No sentences from this job are assigned to you.")
 
     paginator = Paginator(sentence_queryset, 10)
-    page_number = request.GET.get("page", 1)
+    page_number = request.GET.get("page")
+    if page_number is None:
+        first_unfinished = sentence_queryset.exclude(status="done").first()
+        if first_unfinished:
+            unfinished_index = sentence_queryset.filter(
+                sentence_number__lt=first_unfinished.sentence_number,
+            ).count()
+            page_number = (unfinished_index // paginator.per_page) + 1
+        else:
+            page_number = 1
     page_obj = paginator.get_page(page_number)
-
-    if request.method == "POST":
-        post_page_number = request.POST.get("page", page_number)
-        page_obj = paginator.get_page(post_page_number)
-        action = request.POST.get("action", "draft")
-        mark_page_done = action == "submit_page"
-
-        for s in page_obj.object_list:
-            edited = request.POST.get(str(s.sentence_id))
-            status = request.POST.get(f"status_{s.sentence_id}")
-
-            if edited is not None:
-                edit_made = (edited.strip() != s.tgt_sentence.strip())
-                next_status = "done" if mark_page_done else (status or "pending")
-
-                if next_status != "done":
-                    next_status = "edited" if edit_made else "pending"
-
-                s.validated_translation = edited
-                s.edit_made = edit_made
-                s.status = next_status
-                s.validated_by = request.user
-                s.final_date = timezone.now() if next_status == "done" else None
-                s.save()
-
-        all_done = (
-            job.sentences.exists()
-            and job.sentences.filter(status="done").count() == job.sentences.count()
-        )
-        job.edit_made = all_done
-        job.final_date = timezone.now() if all_done else None
-        job.save(update_fields=["edit_made", "final_date"])
-
-        return redirect(f"{request.path}?page={page_obj.number}")
 
     remaining_count = sentence_queryset.exclude(status="done").count()
     done_count = sentence_queryset.filter(status="done").count()
