@@ -57,15 +57,35 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="login")
-def user_dashboard(request: HttpRequest) -> HttpResponse:
-    if request.user.is_superuser:
-        return redirect("admin-dashboard")
+def user_dashboard(request):
+    jobs = Job.objects.filter(validated_by=request.user)
+
+    job_data = []
+    for idx, job in enumerate(jobs, start=1):
+        total = job.sentences.count()
+        done = job.sentences.filter(edit_made=True).count()
+
+        status = "Completed" if done == total and total > 0 else "Pending"
+
+        job_data.append({
+            "no": idx,
+            "job_id": job.job_id,
+            "name": job.name,
+            "total": total,
+            "done": done,
+            "status": status
+        })
+
+    # pagination (5 per page)
+    paginator = Paginator(job_data, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        "display_name": request.user.get_full_name() or request.user.username or "Validator",
-        "role_label": "Validation User",
+        "page_obj": page_obj
     }
-    return render(request, "user_dashboard.html", context)
+
+    return render(request, "user/dashboard.html", context)
 
 
 def logout_view(request: HttpRequest) -> HttpResponse:
