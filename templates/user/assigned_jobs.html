@@ -2,19 +2,52 @@
 
 {% block content %}
 
-<div class="glass-card">
+<div class="glass-card p-6">
 
     <h3 class="text-lg font-semibold mb-4">Assigned Jobs</h3>
 
-    {% for job in jobs %}
-        <div class="border-b py-3">
-            <a href="{% url 'user-job-detail' job.job_id %}" class="text-blue-600">
-                {{ job.name }}
-            </a>
-        </div>
-    {% empty %}
-        <p>No assigned jobs</p>
-    {% endfor %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b text-slate-500">
+                    <th class="py-2">No</th>
+                    <th>Job ID</th>
+                    <th>Description</th>
+                    <th>Assigned By</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for job in jobs %}
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="py-2">{{ forloop.counter }}</td>
+                    <td class="text-xs">{{ job.job_id }}</td>
+                    <td>{{ job.name }}</td>
+                    <td>
+                        {% if job.validated_by %}
+                            {{ job.validated_by.username }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'user-job-detail' job.job_id %}"
+                           class="bg-indigo-500 text-white px-3 py-1 rounded text-xs">
+                            Open
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-slate-500">
+                        No assigned jobs
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
 </div>
 

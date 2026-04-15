@@ -5,7 +5,12 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+<<<<<<< HEAD
 from django.utils import timezone
+=======
+from django.core.paginator import Paginator
+
+>>>>>>> dce21d38ed818df0b203c1023f1d5640b01a1057
 
 from .forms import AdminUserForm, JobCreateForm
 from .models import UserProfile, Job, Sentence
@@ -60,14 +65,19 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
 
 @login_required(login_url="login")
 def user_dashboard(request):
-    jobs = Job.objects.filter(validated_by=request.user)
+    all_jobs = Job.objects.all()
+    assigned_jobs_qs = Job.objects.filter(validated_by_id=request.user.id)
+
+    total_jobs = all_jobs.filter(validated_by__isnull=True).count()
+    assigned_jobs = assigned_jobs_qs.count()
+    completed_jobs = assigned_jobs_qs.filter(edit_made=True).count()
 
     job_data = []
-    for idx, job in enumerate(jobs, start=1):
+    for idx, job in enumerate(assigned_jobs_qs, start=1):
         total = job.sentences.count()
         done = job.sentences.filter(edit_made=True).count()
 
-        status = "Completed" if done == total and total > 0 else "Pending"
+        status = "Completed" if total > 0 and done == total else "Pending"
 
         job_data.append({
             "no": idx,
@@ -78,15 +88,19 @@ def user_dashboard(request):
             "status": status
         })
 
-    # pagination (5 per page)
     paginator = Paginator(job_data, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     context = {
+        "stats": {
+            "total_jobs": total_jobs,
+            "assigned_jobs": assigned_jobs,
+            "completed_jobs": completed_jobs,
+        },
         "page_obj": page_obj
     }
-
+    print("Assigned jobs:", assigned_jobs_qs)
     return render(request, "user/dashboard.html", context)
 
 
@@ -231,12 +245,10 @@ def user_dashboard(request):
 def user_jobs(request):
     if request.method == "POST":
         job_id = request.POST.get("job_id")
-        job = get_object_or_404(Job, job_id=job_id)
+        job = Job.objects.get(job_id=job_id)
 
-        job.validated_by = request.user
+        job.validated_by = request.user   # ✅ THIS IS REQUIRED
         job.save()
-
-        return redirect("user-assigned-jobs")
 
     jobs = Job.objects.filter(validated_by__isnull=True)
 
