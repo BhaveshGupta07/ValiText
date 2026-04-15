@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ValiText Admin{% endblock %}</title>
+    <title>{% block title %}AnuSpasht Admin{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -134,11 +135,11 @@
     <aside class="sidebar fixed top-0 left-0 hidden h-full w-64 flex-col lg:flex">
         <div class="border-b border-white/5 p-6">
             <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-purple-500/20">
-                    V
+                <div class="flex h-16 w-28 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-purple-500/20">
+                    <img src="{% static 'logo.png' %}" alt="AnuSpasht logo" class="h-full w-full object-contain">
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold tracking-tight text-white">ValiText</h1>
+                    <h1 class="text-lg font-bold tracking-tight text-white">AnuSpasht</h1>
                     <p class="text-[10px] uppercase tracking-[0.22em] text-white/35">Admin Panel</p>
                 </div>
             </div>

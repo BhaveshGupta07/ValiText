@@ -433,12 +433,6 @@ def admin_settings(request: HttpRequest) -> HttpResponse:
     return render(request, "admin_settings.html")
 
 @login_required
-def user_jobs(request):
-    jobs = Job.objects.filter(sentences__assigned_to=request.user).distinct()
-    return render(request, "user/jobs.html", {"jobs": jobs})
-
-
-@login_required
 def user_assigned_jobs(request):
     jobs = Job.objects.filter(sentences__assigned_to=request.user).distinct()
 

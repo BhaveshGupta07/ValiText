@@ -1,5 +1,5 @@
 """
-WSGI config for valitext project.
+WSGI config for AnuSpasht project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ValiText User{% endblock %}</title>
+    <title>{% block title %}AnuSpasht User{% endblock %}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -49,8 +50,15 @@
 
     <!-- Logo -->
     <div class="p-6 border-b border-white/10">
-        <h1 class="text-lg font-bold">ValiText</h1>
-        <p class="text-xs text-white/40">User Panel</p>
+        <div class="flex items-center gap-3">
+            <div class="flex h-16 w-28 items-center justify-center overflow-hidden rounded-2xl bg-white">
+                <img src="{% static 'logo.png' %}" alt="AnuSpasht logo" class="h-full w-full object-contain">
+            </div>
+            <div>
+                <h1 class="text-lg font-bold">AnuSpasht</h1>
+                <p class="text-xs text-white/40">User Panel</p>
+            </div>
+        </div>
     </div>
 
     <!-- NAV -->
@@ -59,11 +67,6 @@
         <a href="{% url 'user-dashboard' %}"
            class="nav-item block px-4 py-3 rounded-xl text-sm">
             Dashboard
-        </a>
-
-        <a href="{% url 'user-jobs' %}"
-           class="nav-item block px-4 py-3 rounded-xl text-sm">
-            Jobs
         </a>
 
         <a href="{% url 'user-assigned-jobs' %}"

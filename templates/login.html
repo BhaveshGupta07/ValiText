@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}ValiText Login{% endblock %}
+{% block title %}AnuSpasht Login{% endblock %}
 {% block body_class %}min-h-screen relative overflow-hidden font-inter bg-[#070b17] text-white{% endblock %}
 
 {% block extra_head %}
@@ -207,14 +208,10 @@
     <main class="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
         <div class="w-full max-w-lg">
             <div class="mb-8 text-center">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-glow">
-                    <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M5 8l6-4 6 4"></path>
-                        <path d="M5 8v8l6 4 6-4V8"></path>
-                        <path d="M11 4v16"></path>
-                    </svg>
+                <div class="mx-auto mb-5 flex h-28 w-56 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-glow">
+                    <img src="{% static 'logo.png' %}" alt="AnuSpasht logo" class="h-full w-full object-contain">
                 </div>
-                <h1 class="text-plus-2-title font-bold tracking-tight text-white">ValiText</h1>
+                <h1 class="text-plus-2-title font-bold tracking-tight text-white">AnuSpasht</h1>
                 <p class="text-plus-2-body mt-2 font-light text-white/40">Translation validation system interface</p>
             </div>
 
