@@ -25,4 +25,132 @@
     </article>
 </section>
 
+<section class="glass-card mt-6 rounded-[28px] p-6">
+    <div class="mb-5 flex items-center justify-between">
+        <div>
+            <h3 class="text-lg font-semibold text-slate-900">Job Assignment Overview</h3>
+            <p class="text-sm text-slate-500">Click a job row to see user-wise assigned, pending, edited, and done counts.</p>
+        </div>
+        <a href="{% url 'admin-jobs' %}" class="btn-secondary rounded-xl px-4 py-2 text-sm font-semibold">View Jobs</a>
+    </div>
+
+    <div class="table-shell overflow-x-auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Language Pair</th>
+                    <th>Sentences</th>
+                    <th>Status</th>
+                    <th>Expand</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dashboard_jobs %}
+                    <tr class="cursor-pointer dashboard-job-row" data-target="job-assignment-{{ forloop.counter }}">
+                        <td>{{ item.job.name }}</td>
+                        <td>{{ item.job.src_lang }} -> {{ item.job.tgt_lang }}</td>
+                        <td>
+                            <div class="text-sm font-semibold text-slate-800">{{ item.job.assigned_sentences }}/{{ item.job.total_sentences }} assigned</div>
+                            <div class="text-xs text-slate-500">{{ item.unassigned_sentences }} unassigned</div>
+                        </td>
+                        <td>
+                            {% if item.job.total_sentences and item.job.done_sentences == item.job.total_sentences %}
+                                <span class="text-green-600 font-medium">Completed</span>
+                            {% elif item.job.assigned_sentences %}
+                                <span class="text-blue-600 font-medium">In Progress</span>
+                            {% else %}
+                                <span class="text-amber-600 font-medium">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button type="button" class="rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                                Show Users
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="job-assignment-{{ forloop.counter }}" class="hidden bg-slate-50/70">
+                        <td colspan="5" class="p-0">
+                            <div class="p-4">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-slate-700">Assigned users for {{ item.job.name }}</p>
+                                    <a href="{% url 'admin-job-assignments' item.job.job_id %}" class="text-xs font-semibold text-indigo-600 hover:underline">Manage Assignment</a>
+                                </div>
+                                <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Assigned</th>
+                                                <th>Pending</th>
+                                                <th>Edited</th>
+                                                <th>Done</th>
+                                                <th>Progress</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in item.assignment_rows %}
+                                                <tr>
+                                                    <td>
+                                                        <div class="font-semibold text-slate-900">{{ row.user.get_full_name|default:row.user.username }}</div>
+                                                        <div class="text-xs text-slate-500">{{ row.user.username }}</div>
+                                                    </td>
+                                                    <td>{{ row.assigned_count }}</td>
+                                                    <td>{{ row.pending_count }}</td>
+                                                    <td>
+                                                        {% if row.edited_count %}
+                                                            <a href="{% url 'admin-assignment-download' item.job.job_id row.user.id 'edited' %}" class="font-semibold text-indigo-600 hover:underline">{{ row.edited_count }}</a>
+                                                        {% else %}
+                                                            0
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if row.done_count %}
+                                                            <a href="{% url 'admin-assignment-download' item.job.job_id row.user.id 'done' %}" class="font-semibold text-emerald-600 hover:underline">{{ row.done_count }}</a>
+                                                        {% else %}
+                                                            0
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="mb-1 text-xs font-semibold text-indigo-600">{{ row.progress_percent }}%</div>
+                                                        <div class="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                                                            <div class="h-full rounded-full bg-indigo-600" style="width: {{ row.progress_percent }}%;"></div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="6" class="py-6 text-center text-slate-500">No users assigned yet.</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-500">No jobs created yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    document.querySelectorAll(".dashboard-job-row").forEach(row => {
+        row.addEventListener("click", event => {
+            if (event.target.closest("a")) return;
+
+            const detailRow = document.getElementById(row.dataset.target);
+            const button = row.querySelector("button");
+            const isHidden = detailRow.classList.toggle("hidden");
+
+            button.textContent = isHidden ? "Show Users" : "Hide Users";
+        });
+    });
+</script>
+
 {% endblock %}

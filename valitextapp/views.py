@@ -47,6 +47,43 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
     total_users = User.objects.count()
     active_users = User.objects.filter(is_active=True).count()
     inactive_users = User.objects.filter(is_active=False).count()
+    jobs = Job.objects.annotate(
+        total_sentences=Count("sentences"),
+        assigned_sentences=Count("sentences", filter=Q(sentences__assigned_to__isnull=False)),
+        done_sentences=Count("sentences", filter=Q(sentences__status="done")),
+    ).order_by("-created_at")
+
+    dashboard_jobs = []
+    for job in jobs:
+        assignment_rows = []
+        assigned_user_ids = (
+            Sentence.objects.filter(job=job, assigned_to__isnull=False)
+            .values_list("assigned_to_id", flat=True)
+            .distinct()
+        )
+
+        for user in User.objects.filter(id__in=assigned_user_ids).order_by("username"):
+            user_sentences = Sentence.objects.filter(job=job, assigned_to=user)
+            assigned_count = user_sentences.count()
+            done_count = user_sentences.filter(status="done").count()
+            edited_count = user_sentences.filter(status="edited").count()
+            pending_count = assigned_count - done_count - edited_count
+            progress_percent = round((done_count / assigned_count) * 100) if assigned_count else 0
+
+            assignment_rows.append({
+                "user": user,
+                "assigned_count": assigned_count,
+                "done_count": done_count,
+                "edited_count": edited_count,
+                "pending_count": pending_count,
+                "progress_percent": progress_percent,
+            })
+
+        dashboard_jobs.append({
+            "job": job,
+            "assignment_rows": assignment_rows,
+            "unassigned_sentences": job.total_sentences - job.assigned_sentences,
+        })
 
     context = {
         "display_name": request.user.get_full_name() or request.user.username or "Admin Lead",
@@ -56,6 +93,7 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
             "active_users": active_users,
             "inactive_users": inactive_users,
         },
+        "dashboard_jobs": dashboard_jobs,
     }
     return render(request, "admin_dashboard.html", context)
 
@@ -355,6 +393,36 @@ def admin_job_assignments(request: HttpRequest, job_id) -> HttpResponse:
         "assigned_sentences": assigned_sentences,
         "unassigned_sentences": unassigned_sentences,
     })
+
+
+@login_required(login_url="login")
+def admin_assignment_download(request: HttpRequest, job_id, user_id, status) -> HttpResponse:
+    if not request.user.is_superuser:
+        return redirect("user-dashboard")
+    if status not in {"edited", "done"}:
+        raise Http404("Unsupported assignment export status.")
+
+    job = get_object_or_404(Job, job_id=job_id)
+    user = get_object_or_404(User, id=user_id)
+    sentences = Sentence.objects.filter(
+        job=job,
+        assigned_to=user,
+        status=status,
+    ).order_by("sentence_number", "sentence_id")
+
+    lines = [
+        (sentence.validated_translation or sentence.tgt_sentence or "").replace("\r\n", "\n").replace("\r", "\n")
+        for sentence in sentences
+    ]
+    content = "\n".join(lines)
+    if content:
+        content += "\n"
+
+    safe_job_name = "".join(char if char.isalnum() or char in ("-", "_") else "_" for char in job.name)[:60]
+    filename = f"{safe_job_name}_{user.username}_{status}_{sentences.count()}_sentences.txt"
+    response = HttpResponse(content, content_type="text/plain; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required(login_url="login")

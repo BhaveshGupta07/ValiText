@@ -80,8 +80,24 @@
                             </td>
                             <td>{{ row.assigned_count }}</td>
                             <td>{{ row.pending_count }}</td>
-                            <td>{{ row.edited_count }}</td>
-                            <td>{{ row.done_count }}</td>
+                            <td>
+                                {% if row.edited_count %}
+                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'edited' %}" class="font-semibold text-indigo-600 hover:underline" title="Download edited sentences as TXT">
+                                        {{ row.edited_count }}
+                                    </a>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.done_count %}
+                                    <a href="{% url 'admin-assignment-download' job.job_id row.user.id 'done' %}" class="font-semibold text-emerald-600 hover:underline" title="Download done sentences as TXT">
+                                        {{ row.done_count }}
+                                    </a>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="mb-1 text-xs font-semibold text-indigo-600">{{ row.progress_percent }}%</div>
                                 <div class="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
