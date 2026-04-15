@@ -25,40 +25,4 @@
     </article>
 </section>
 
-<section class="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-    <article class="glass-card rounded-[28px] p-6">
-        <div class="mb-4">
-            <h3 class="text-lg font-semibold text-slate-900">Quick Access</h3>
-            <p class="text-sm text-slate-500">Every section now renders through the shared admin base layout.</p>
-        </div>
-        <div class="grid gap-4 sm:grid-cols-2">
-            <a href="{% url 'admin-user-list' %}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-sm">
-                <p class="text-base font-semibold text-slate-900">Users</p>
-                <p class="mt-2 text-sm text-slate-500">Browse all user accounts and filter inactive users.</p>
-            </a>
-            <a href="{% url 'admin-user-create' %}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-sm">
-                <p class="text-base font-semibold text-slate-900">Create User</p>
-                <p class="mt-2 text-sm text-slate-500">Add a new account from a dedicated page.</p>
-            </a>
-            <a href="{% url 'admin-jobs' %}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-sm">
-                <p class="text-base font-semibold text-slate-900">Jobs</p>
-                <p class="mt-2 text-sm text-slate-500">Open the job list page rendered through the same parent template.</p>
-            </a>
-            <a href="{% url 'admin-settings' %}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-sm">
-                <p class="text-base font-semibold text-slate-900">Settings</p>
-                <p class="mt-2 text-sm text-slate-500">Manage admin preferences from a dedicated page.</p>
-            </a>
-        </div>
-    </article>
-
-    <article class="glass-card rounded-[28px] p-6">
-        <h3 class="text-lg font-semibold text-slate-900">Session</h3>
-        <p class="mt-2 text-sm text-slate-500">Signed in as {{ display_name }}.</p>
-        <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
-            <p class="text-sm font-medium text-slate-500">Current access</p>
-            <p class="mt-2 text-lg font-semibold text-slate-900">{{ role_label }}</p>
-            <p class="mt-2 text-sm text-slate-500">Sidebar and topbar stay fixed because this page now extends `admin_ui_base.html`.</p>
-        </div>
-    </article>
-</section>
 {% endblock %}
