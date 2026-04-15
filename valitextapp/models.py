@@ -59,6 +59,11 @@ class Sentence(models.Model):
     edit_made = models.BooleanField(default=False)
     validated_translation = models.TextField(blank=True, null=True)
     validated_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='validated_sentences')
+    status = models.CharField(max_length=20, default='pending', choices=[
+        ('pending', 'Pending'),
+        ('edited', 'Edited'),
+        ('done', 'Done'),
+    ])
     final_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:

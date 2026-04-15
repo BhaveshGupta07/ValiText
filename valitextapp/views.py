@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .forms import AdminUserForm, JobCreateForm
 from .models import UserProfile, Job, Sentence
@@ -248,26 +250,79 @@ def user_assigned_jobs(request):
     return render(request, "user/assigned_jobs.html", {"jobs": jobs})
 
 
+def build_page_items(page_obj):
+    total = page_obj.paginator.num_pages
+    current = page_obj.number
+
+    if total <= 7:
+        return list(range(1, total + 1))
+
+    if current <= 4:
+        return [1, 2, 3, "...", total]
+
+    if current >= total - 3:
+        return [1, "...", total - 2, total - 1, total]
+
+    return [1, "...", current - 1, current, current + 1, "...", total]
+
+
 @login_required
 def user_job_detail(request, job_id):
     job = get_object_or_404(Job, job_id=job_id, validated_by=request.user)
-    sentences = job.sentences.all()
+    sentence_queryset = Sentence.objects.filter(job=job).order_by("sentence_id")
+
+    paginator = Paginator(sentence_queryset, 10)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
 
     if request.method == "POST":
-        for s in sentences:
+        post_page_number = request.POST.get("page", page_number)
+        page_obj = paginator.get_page(post_page_number)
+        action = request.POST.get("action", "draft")
+        mark_page_done = action == "submit_page"
+
+        for s in page_obj.object_list:
             edited = request.POST.get(str(s.sentence_id))
-            if edited:
+            status = request.POST.get(f"status_{s.sentence_id}")
+
+            if edited is not None:
+                edit_made = (edited.strip() != s.tgt_sentence.strip())
+                next_status = "done" if mark_page_done else (status or "pending")
+
+                if next_status != "done":
+                    next_status = "edited" if edit_made else "pending"
+
                 s.validated_translation = edited
-                s.edit_made = (edited != s.tgt_sentence)
+                s.edit_made = edit_made
+                s.status = next_status
                 s.validated_by = request.user
+                s.final_date = timezone.now() if next_status == "done" else None
                 s.save()
 
-        job.edit_made = True
-        job.save()
+        all_done = (
+            sentence_queryset.exists()
+            and sentence_queryset.filter(status="done").count() == sentence_queryset.count()
+        )
+        job.edit_made = all_done
+        job.validated_by = request.user
+        job.final_date = timezone.now() if all_done else None
+        job.save(update_fields=["edit_made", "validated_by", "final_date"])
 
-        return redirect("user-assigned-jobs")
+        return redirect(f"{request.path}?page={page_obj.number}")
+
+    remaining_count = sentence_queryset.exclude(status="done").count()
+    done_count = sentence_queryset.filter(status="done").count()
+    edited_count = sentence_queryset.filter(edit_made=True).count()
+    total_count = sentence_queryset.count()
+    progress_percent = round((done_count / total_count) * 100) if total_count else 0
 
     return render(request, "user/assigned_job_detail.html", {
         "job": job,
-        "sentences": sentences
+        "sentences": page_obj.object_list,
+        "page_obj": page_obj,
+        "page_items": build_page_items(page_obj),
+        "remaining_count": remaining_count,
+        "done_count": done_count,
+        "edited_count": edited_count,
+        "progress_percent": progress_percent,
     })
