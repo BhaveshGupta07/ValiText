@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     admin_dashboard,
     admin_create_job,
+    admin_job_assignments,
     admin_jobs,
     admin_settings,
     admin_user_create,
@@ -25,6 +26,7 @@ urlpatterns = [
     path("admin-panel/users/<int:user_id>/edit/", admin_user_edit, name="admin-user-edit"),
     path("admin-panel/jobs/", admin_jobs, name="admin-jobs"),
     path("admin-panel/jobs/new/", admin_create_job, name="admin-create-job"),
+    path("admin-panel/jobs/<uuid:job_id>/assignments/", admin_job_assignments, name="admin-job-assignments"),
     path("admin-panel/settings/", admin_settings, name="admin-settings"),
     path("workspace/", user_dashboard, name="user-dashboard"),
     path("logout/", logout_view, name="logout"),

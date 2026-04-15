@@ -3,14 +3,14 @@
 {% block title %}Jobs - ValiText Admin{% endblock %}
 {% block nav_jobs %}active{% endblock %}
 {% block header_title %}Jobs{% endblock %}
-{% block header_subtitle %}Track translation validation work from a dedicated page{% endblock %}
+{% block header_subtitle %}Track uploaded jobs, assignment coverage, and validation progress{% endblock %}
 
 {% block content %}
 <section class="glass-card rounded-[28px] p-6">
     <div class="mb-5 flex items-center justify-between">
         <div>
             <h3 class="text-lg font-semibold text-slate-900">Job List</h3>
-            <p class="text-sm text-slate-500">This page now renders through the shared admin base layout.</p>
+            <p class="text-sm text-slate-500">Assign sentence batches to users and monitor progress.</p>
         </div>
         <a href="{% url 'admin-create-job' %}" class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Create Job</a>
     </div>
@@ -20,25 +20,36 @@
                 <tr>
                     <th>Title</th>
                     <th>Language Pair</th>
+                    <th>Sentences</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for job in jobs %}
                     <tr>
                         <td>{{ job.name }}</td>
-                        <td>{{ job.src_lang }} → {{ job.tgt_lang }}</td>
+                        <td>{{ job.src_lang }} -> {{ job.tgt_lang }}</td>
                         <td>
-                            {% if job.validated_by %}
+                            <div class="text-sm font-semibold text-slate-800">{{ job.assigned_sentences }}/{{ job.total_sentences }} assigned</div>
+                            <div class="text-xs text-slate-500">{{ job.done_sentences }} done</div>
+                        </td>
+                        <td>
+                            {% if job.total_sentences and job.done_sentences == job.total_sentences %}
                                 <span class="text-green-600 font-medium">Completed</span>
+                            {% elif job.assigned_sentences %}
+                                <span class="text-blue-600 font-medium">In Progress</span>
                             {% else %}
-                                <span class="text-amber-600 font-medium">Pending</span>
+                                <span class="text-amber-600 font-medium">Unassigned</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin-job-assignments' job.job_id %}" class="btn-secondary rounded-xl px-3 py-2 text-xs font-semibold">Manage Assignment</a>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="3" class="text-center py-8 text-slate-500">No jobs created yet. <a href="{% url 'admin-create-job' %}" class="text-blue-600 hover:underline">Create one</a></td>
+                        <td colspan="5" class="text-center py-8 text-slate-500">No jobs created yet. <a href="{% url 'admin-create-job' %}" class="text-blue-600 hover:underline">Create one</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

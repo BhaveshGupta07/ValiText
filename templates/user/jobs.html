@@ -2,29 +2,23 @@
 
 {% block content %}
 
-<div class="glass-card">
-
-    <h3 class="text-lg font-semibold mb-4">Available Jobs</h3>
+<div class="glass-card p-6">
+    <h3 class="text-lg font-semibold mb-4">My Assigned Jobs</h3>
 
     {% for job in jobs %}
         <div class="border-b py-3 flex justify-between items-center">
             <div>
                 <p class="text-sm font-medium">{{ job.name }}</p>
-                <p class="text-xs text-gray-500">{{ job.src_lang }} → {{ job.tgt_lang }}</p>
+                <p class="text-xs text-gray-500">{{ job.src_lang }} -> {{ job.tgt_lang }}</p>
             </div>
 
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="job_id" value="{{ job.job_id }}">
-                <button class="bg-blue-500 text-white px-3 py-1 rounded">
-                    Assign
-                </button>
-            </form>
+            <a href="{% url 'user-job-detail' job.job_id %}" class="bg-blue-500 text-white px-3 py-1 rounded">
+                Open
+            </a>
         </div>
     {% empty %}
-        <p>No jobs available</p>
+        <p>No jobs assigned to you yet</p>
     {% endfor %}
-
 </div>
 
 {% endblock %}

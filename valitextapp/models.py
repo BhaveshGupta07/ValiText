@@ -54,8 +54,11 @@ class Sentence(models.Model):
         editable=False
     )
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='sentences')
+    sentence_number = models.PositiveIntegerField(default=0, db_index=True)
     src_sentence = models.TextField()
     tgt_sentence = models.TextField()
+    assigned_to = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_sentences')
+    assigned_at = models.DateTimeField(null=True, blank=True)
     edit_made = models.BooleanField(default=False)
     validated_translation = models.TextField(blank=True, null=True)
     validated_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='validated_sentences')
@@ -67,7 +70,7 @@ class Sentence(models.Model):
     final_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['sentence_id']
+        ordering = ['sentence_number', 'sentence_id']
 
     def __str__(self):
         return f"Sentence {self.sentence_id.hex[:8]} ({self.src_sentence[:50]}...)"

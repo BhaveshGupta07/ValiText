@@ -53,6 +53,34 @@
             <div class="text-red-500 text-xs mt-1">{{ form.tgt_file.errors.0 }}</div>
             {% endif %}
         </div>
+        <div class="md:col-span-2 mt-2 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5">
+            <h4 class="text-sm font-semibold text-slate-900">Optional Initial Assignment</h4>
+            <p class="mt-1 text-xs text-slate-500">
+                Upload stays the same. If you want, assign the first batch of counted sentences to one user now.
+            </p>
+            <div class="mt-4 grid gap-5 md:grid-cols-2">
+                <div>
+                    {{ form.assign_user.label_tag|cut:"&nbsp;" }}
+                    {{ form.assign_user }}
+                    {% if form.assign_user.help_text %}
+                    <p class="field-help">{{ form.assign_user.help_text }}</p>
+                    {% endif %}
+                    {% if form.assign_user.errors %}
+                    <div class="text-red-500 text-xs mt-1">{{ form.assign_user.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.assign_count.label_tag|cut:"&nbsp;" }}
+                    {{ form.assign_count }}
+                    {% if form.assign_count.help_text %}
+                    <p class="field-help">{{ form.assign_count.help_text }}</p>
+                    {% endif %}
+                    {% if form.assign_count.errors %}
+                    <div class="text-red-500 text-xs mt-1">{{ form.assign_count.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         <div class="md:col-span-2 flex gap-3">
             <button type="submit" class="btn-primary rounded-xl px-5 py-3 text-sm font-semibold">Create Job</button>
             <a href="{% url 'admin-jobs' %}" class="btn-secondary rounded-xl px-5 py-3 text-sm font-semibold">Back to Jobs</a>

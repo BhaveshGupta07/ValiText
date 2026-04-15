@@ -2,12 +2,14 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .forms import AdminUserForm, JobCreateForm
+from .forms import AdminUserForm, JobAssignmentForm, JobCreateForm
 from .models import UserProfile, Job, Sentence
 
 
@@ -61,18 +63,21 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
 @login_required(login_url="login")
 def user_dashboard(request):
     all_jobs = Job.objects.all()
-    assigned_jobs_qs = Job.objects.filter(validated_by_id=request.user.id)
+    assigned_jobs_qs = Job.objects.filter(sentences__assigned_to=request.user).distinct()
 
-    total_jobs = all_jobs.filter(validated_by__isnull=True).count()
+    total_jobs = all_jobs.filter(sentences__assigned_to__isnull=True).distinct().count()
     assigned_jobs = assigned_jobs_qs.count()
-    completed_jobs = assigned_jobs_qs.filter(edit_made=True).count()
+    completed_jobs = 0
 
     job_data = []
     for idx, job in enumerate(assigned_jobs_qs, start=1):
-        total = job.sentences.count()
-        done = job.sentences.filter(status="done").count()
+        assigned_sentences = job.sentences.filter(assigned_to=request.user)
+        total = assigned_sentences.count()
+        done = assigned_sentences.filter(status="done").count()
 
         status = "Completed" if total > 0 and done == total else "Pending"
+        if status == "Completed":
+            completed_jobs += 1
 
         job_data.append({
             "no": idx,
@@ -101,6 +106,59 @@ def user_dashboard(request):
 def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     return redirect("login")
+
+
+def assign_job_sentences(job, user, target_count):
+    target_count = max(0, target_count)
+    assigned_qs = Sentence.objects.filter(job=job, assigned_to=user)
+    current_count = assigned_qs.count()
+    completed_count = assigned_qs.filter(status="done").count()
+
+    if target_count < completed_count:
+        return False, (
+            f"{user.username} already completed {completed_count} sentences. "
+            "Allocation cannot be reduced below completed work."
+        )
+
+    if target_count > current_count:
+        needed = target_count - current_count
+        available_ids = list(
+            Sentence.objects.filter(job=job, assigned_to__isnull=True)
+            .order_by("sentence_number", "sentence_id")
+            .values_list("sentence_id", flat=True)[:needed]
+        )
+
+        if len(available_ids) < needed:
+            return False, (
+                f"Only {len(available_ids)} unassigned sentences are available for this job."
+            )
+
+        Sentence.objects.filter(sentence_id__in=available_ids).update(
+            assigned_to=user,
+            assigned_at=timezone.now(),
+        )
+        return True, f"Assigned {needed} more sentences to {user.username}."
+
+    if target_count < current_count:
+        remove_count = current_count - target_count
+        removable_ids = list(
+            assigned_qs.exclude(status="done")
+            .order_by("-sentence_number", "sentence_id")
+            .values_list("sentence_id", flat=True)[:remove_count]
+        )
+
+        if len(removable_ids) < remove_count:
+            return False, (
+                f"Cannot remove {remove_count} sentences because too much assigned work is already completed."
+            )
+
+        Sentence.objects.filter(sentence_id__in=removable_ids).update(
+            assigned_to=None,
+            assigned_at=None,
+        )
+        return True, f"Reduced {user.username}'s allocation by {remove_count} sentences."
+
+    return True, f"{user.username} already has {target_count} assigned sentences."
 
 
 @login_required(login_url="login")
@@ -193,7 +251,11 @@ def admin_jobs(request: HttpRequest) -> HttpResponse:
     if not request.user.is_superuser:
         return redirect("user-dashboard")
 
-    jobs = Job.objects.all().order_by("-created_at")
+    jobs = Job.objects.annotate(
+        total_sentences=Count("sentences"),
+        assigned_sentences=Count("sentences", filter=Q(sentences__assigned_to__isnull=False)),
+        done_sentences=Count("sentences", filter=Q(sentences__status="done")),
+    ).order_by("-created_at")
     context = {
         "jobs": jobs,
         "display_name": request.user.get_full_name() or request.user.username or "Admin",
@@ -210,8 +272,18 @@ def admin_create_job(request: HttpRequest) -> HttpResponse:
         form = JobCreateForm(request.POST, request.FILES)
         if form.is_valid():
             job = form.save()
+            assign_user = form.cleaned_data.get("assign_user")
+            assign_count = form.cleaned_data.get("assign_count")
+            if assign_user and assign_count:
+                with transaction.atomic():
+                    success, assignment_message = assign_job_sentences(job, assign_user, assign_count)
+                if not success:
+                    messages.error(request, assignment_message)
+                    return redirect("admin-job-assignments", job_id=job.job_id)
             sentence_count = getattr(job, 'sentence_count', len(job.sentences.all()))
             messages.success(request, f'Job "{job.name}" created successfully with {sentence_count} sentences.')
+            if assign_user and assign_count:
+                messages.success(request, f"Initial assignment: {assign_count} sentences assigned to {assign_user.username}.")
             return redirect("admin-jobs")
     else:
         form = JobCreateForm()
@@ -224,6 +296,68 @@ def admin_create_job(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="login")
+def admin_job_assignments(request: HttpRequest, job_id) -> HttpResponse:
+    if not request.user.is_superuser:
+        return redirect("user-dashboard")
+
+    job = get_object_or_404(Job, job_id=job_id)
+
+    if request.method == "POST":
+        form = JobAssignmentForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                success, message = assign_job_sentences(
+                    job,
+                    form.cleaned_data["user"],
+                    form.cleaned_data["sentence_count"],
+                )
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
+            return redirect("admin-job-assignments", job_id=job.job_id)
+    else:
+        form = JobAssignmentForm()
+
+    assignment_rows = []
+    assigned_user_ids = (
+        Sentence.objects.filter(job=job, assigned_to__isnull=False)
+        .values_list("assigned_to_id", flat=True)
+        .distinct()
+    )
+
+    for user in User.objects.filter(id__in=assigned_user_ids).order_by("username"):
+        user_sentences = Sentence.objects.filter(job=job, assigned_to=user)
+        assigned_count = user_sentences.count()
+        done_count = user_sentences.filter(status="done").count()
+        edited_count = user_sentences.filter(status="edited").count()
+        pending_count = assigned_count - done_count - edited_count
+        progress_percent = round((done_count / assigned_count) * 100) if assigned_count else 0
+
+        assignment_rows.append({
+            "user": user,
+            "assigned_count": assigned_count,
+            "done_count": done_count,
+            "edited_count": edited_count,
+            "pending_count": pending_count,
+            "progress_percent": progress_percent,
+        })
+
+    total_sentences = job.sentences.count()
+    assigned_sentences = job.sentences.filter(assigned_to__isnull=False).count()
+    unassigned_sentences = total_sentences - assigned_sentences
+
+    return render(request, "admin_job_assignments.html", {
+        "job": job,
+        "form": form,
+        "assignment_rows": assignment_rows,
+        "total_sentences": total_sentences,
+        "assigned_sentences": assigned_sentences,
+        "unassigned_sentences": unassigned_sentences,
+    })
+
+
+@login_required(login_url="login")
 def admin_settings(request: HttpRequest) -> HttpResponse:
     if not request.user.is_superuser:
         return redirect("user-dashboard")
@@ -232,25 +366,28 @@ def admin_settings(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def user_jobs(request):
-    if request.method == "POST":
-        job_id = request.POST.get("job_id")
-        job = get_object_or_404(Job, job_id=job_id, validated_by__isnull=True)
-
-        job.validated_by = request.user   # ✅ THIS IS REQUIRED
-        job.save()
-
-        return redirect("user-assigned-jobs")
-
-    jobs = Job.objects.filter(validated_by__isnull=True)
-
+    jobs = Job.objects.filter(sentences__assigned_to=request.user).distinct()
     return render(request, "user/jobs.html", {"jobs": jobs})
 
 
 @login_required
 def user_assigned_jobs(request):
-    jobs = Job.objects.filter(validated_by=request.user)
+    jobs = Job.objects.filter(sentences__assigned_to=request.user).distinct()
 
-    return render(request, "user/assigned_jobs.html", {"jobs": jobs})
+    job_rows = []
+    for job in jobs:
+        assigned_sentences = job.sentences.filter(assigned_to=request.user)
+        assigned_count = assigned_sentences.count()
+        done_count = assigned_sentences.filter(status="done").count()
+        job_rows.append({
+            "job": job,
+            "assigned_count": assigned_count,
+            "done_count": done_count,
+            "pending_count": assigned_count - done_count,
+            "progress_percent": round((done_count / assigned_count) * 100) if assigned_count else 0,
+        })
+
+    return render(request, "user/assigned_jobs.html", {"job_rows": job_rows})
 
 
 def build_page_items(page_obj):
@@ -271,8 +408,13 @@ def build_page_items(page_obj):
 
 @login_required
 def user_job_detail(request, job_id):
-    job = get_object_or_404(Job, job_id=job_id, validated_by=request.user)
-    sentence_queryset = Sentence.objects.filter(job=job).order_by("sentence_id")
+    job = get_object_or_404(Job, job_id=job_id)
+    sentence_queryset = Sentence.objects.filter(
+        job=job,
+        assigned_to=request.user,
+    ).order_by("sentence_number", "sentence_id")
+    if not sentence_queryset.exists():
+        raise Http404("No sentences from this job are assigned to you.")
 
     paginator = Paginator(sentence_queryset, 10)
     page_number = request.GET.get("page", 1)
@@ -303,13 +445,12 @@ def user_job_detail(request, job_id):
                 s.save()
 
         all_done = (
-            sentence_queryset.exists()
-            and sentence_queryset.filter(status="done").count() == sentence_queryset.count()
+            job.sentences.exists()
+            and job.sentences.filter(status="done").count() == job.sentences.count()
         )
         job.edit_made = all_done
-        job.validated_by = request.user
         job.final_date = timezone.now() if all_done else None
-        job.save(update_fields=["edit_made", "validated_by", "final_date"])
+        job.save(update_fields=["edit_made", "final_date"])
 
         return redirect(f"{request.path}?page={page_obj.number}")
 

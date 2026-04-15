@@ -4,6 +4,27 @@ from django.contrib.auth.models import User
 from .models import UserProfile, Job
 
 
+class JobAssignmentForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label="Assign to user",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    sentence_count = forms.IntegerField(
+        min_value=0,
+        label="Total sentences for this user",
+        help_text="Set this user's total allocation for the job. Use 0 to remove uncompleted allocation.",
+        widget=forms.NumberInput(attrs={"class": "form-input", "placeholder": "e.g. 5000"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["user"].queryset = User.objects.filter(
+            is_superuser=False,
+            is_active=True,
+        ).order_by("username")
+
+
 class AdminUserForm(forms.ModelForm):
     employeeid = forms.CharField(
         max_length=32,
@@ -148,6 +169,20 @@ class JobCreateForm(forms.ModelForm):
         label="Target Corpus (TXT)",
         help_text="One sentence per line, UTF-8 encoded, same number as source"
     )
+    assign_user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Initial assignee",
+        help_text="Optional. Assign the first batch of sentences immediately after upload.",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    assign_count = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label="Initial sentence count",
+        help_text="Optional. Example: 5000 out of 6000.",
+        widget=forms.NumberInput(attrs={"class": "form-input", "placeholder": "e.g. 5000"}),
+    )
 
     class Meta:
         model = Job
@@ -167,10 +202,19 @@ class JobCreateForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["assign_user"].queryset = User.objects.filter(
+            is_superuser=False,
+            is_active=True,
+        ).order_by("username")
+
     def clean(self):
         cleaned_data = super().clean()
         src_file = cleaned_data.get('src_file')
         tgt_file = cleaned_data.get('tgt_file')
+        assign_user = cleaned_data.get('assign_user')
+        assign_count = cleaned_data.get('assign_count')
         if src_file and tgt_file:
             try:
                 src_content = src_file.read().decode('utf-8')
@@ -186,12 +230,21 @@ class JobCreateForm(forms.ModelForm):
                 cleaned_data['src_lines'] = src_lines
                 cleaned_data['tgt_lines'] = tgt_lines
                 cleaned_data['sentence_count'] = len(src_lines)
+                if assign_count and assign_count > len(src_lines):
+                    self.add_error(
+                        'assign_count',
+                        f'Initial assignment cannot exceed {len(src_lines)} sentences.',
+                    )
             except UnicodeDecodeError:
                 raise forms.ValidationError('Files must be valid UTF-8 TXT files.')
             except Exception as e:
                 raise forms.ValidationError(f'Error processing files: {str(e)}')
         elif not src_file or not tgt_file:
             raise forms.ValidationError('Both source and target files are required.')
+        if assign_count and not assign_user:
+            self.add_error('assign_user', 'Choose a user for the initial assignment.')
+        if assign_user and not assign_count:
+            self.add_error('assign_count', 'Enter how many sentences to assign.')
         return cleaned_data
 
     def save(self, commit=True):
@@ -203,9 +256,10 @@ class JobCreateForm(forms.ModelForm):
             instance.save()
             from .models import Sentence
             sentences = []
-            for src, tgt in zip(src_lines, tgt_lines):
+            for index, (src, tgt) in enumerate(zip(src_lines, tgt_lines), start=1):
                 sentences.append(Sentence(
                     job=instance,
+                    sentence_number=index,
                     src_sentence=src,
                     tgt_sentence=tgt
                 ))
