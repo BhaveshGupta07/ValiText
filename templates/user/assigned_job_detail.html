@@ -90,7 +90,7 @@
           </div>
           <div class="rounded-xl bg-slate-100 px-4 py-3">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Done</p>
-            <p id="done-count" class="mt-1 text-lg font-bold text-emerald-600">{{ done_count }}</p>
+            <p id="done-count" class="mt-1 text-lg font-bold text-emerald-700">{{ done_count }}</p>
           </div>
         </div>
       </div>
@@ -128,14 +128,6 @@
               <p class="text-xs text-slate-500">Validate and submit the final translation below</p>
             </div>
           </div>
-
-          <button
-            type="button"
-            class="mark-done-btn inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-            data-target="{{ s.sentence_id }}"
-          >
-            <span class="done-label">Mark Done</span>
-          </button>
         </div>
 
         <div class="p-5 space-y-4">
@@ -165,19 +157,28 @@
 
             <input type="hidden" name="status_{{ s.sentence_id }}" id="status-{{ s.sentence_id }}" value="{{ s.status|default:'pending' }}" />
 
-            <div class="mt-2 flex items-center justify-between text-xs text-slate-400">
-              <span class="char-count" id="char-count-{{ s.sentence_id }}">0 characters</span>
-              <span class="word-count" id="word-count-{{ s.sentence_id }}">0 words</span>
+            <div class="mt-2 flex items-center gap-3 text-xs text-slate-400">
+              <span class="char-count inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1" id="char-count-{{ s.sentence_id }}">0 characters</span>
+              <span class="word-count inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1" id="word-count-{{ s.sentence_id }}">0 words</span>
             </div>
           </div>
-
         </div>
 
-        <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
-          <p class="text-xs text-slate-500">Edits autosave. Mark done when the translation is ready.</p>
-          <span class="status-badge rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600" id="badge-{{ s.sentence_id }}">
-            Pending
-          </span>
+        <div class="flex items-end justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-slate-500">Status</span>
+            <span class="status-badge rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600" id="badge-{{ s.sentence_id }}">
+              Pending
+            </span>
+          </div>
+
+          <button
+            type="button"
+            class="mark-done-btn inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+            data-target="{{ s.sentence_id }}"
+          >
+            <span class="done-label">Mark Done</span>
+          </button>
         </div>
       </div>
       {% endfor %}
@@ -233,7 +234,7 @@
     const container = document.getElementById("toast-container");
     const toast = document.createElement("div");
     const styles = {
-      success: "bg-emerald-600",
+      success: "bg-emerald-700",
       error: "bg-red-600",
       info: "bg-indigo-600"
     };
@@ -261,17 +262,34 @@
     textarea.classList.remove(
       "border-slate-200", "bg-white",
       "border-indigo-300", "bg-indigo-50",
-      "border-emerald-300", "bg-emerald-50",
+      "border-emerald-300", "border-emerald-500",
+      "bg-emerald-50", "bg-emerald-50/80",
       "focus:border-indigo-400", "focus:ring-indigo-100",
-      "focus:border-emerald-400", "focus:ring-emerald-100"
+      "focus:border-emerald-400", "focus:ring-emerald-100",
+      "focus:border-emerald-500", "focus:ring-emerald-200"
     );
 
     if (done) {
-      textarea.classList.add("border-emerald-300", "bg-emerald-50", "focus:border-emerald-400", "focus:ring-emerald-100");
+      textarea.classList.add(
+        "border-emerald-700",
+        "bg-emerald-100",
+        "focus:border-emerald-700",
+        "focus:ring-emerald-300"
+      );
     } else if (edited) {
-      textarea.classList.add("border-indigo-300", "bg-indigo-50", "focus:border-indigo-400", "focus:ring-indigo-100");
+      textarea.classList.add(
+        "border-indigo-300",
+        "bg-indigo-50",
+        "focus:border-indigo-400",
+        "focus:ring-indigo-100"
+      );
     } else {
-      textarea.classList.add("border-slate-200", "bg-white", "focus:border-indigo-400", "focus:ring-indigo-100");
+      textarea.classList.add(
+        "border-slate-200",
+        "bg-white",
+        "focus:border-indigo-400",
+        "focus:ring-indigo-100"
+      );
     }
   }
 
@@ -295,19 +313,19 @@
     applyTextareaState(textarea, edited, done);
 
     if (done) {
-      card.classList.add("ring-1", "ring-emerald-200", "border-emerald-300", "bg-emerald-50/30");
+      card.classList.add("ring-1", "ring-emerald-300", "border-emerald-400", "bg-emerald-80/50");
       badge.textContent = "Done";
-      badge.className = "status-badge rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700";
+      badge.className = "status-badge rounded-full bg-emerald-700 px-3 py-1 text-xs font-medium text-white";
       doneLabel.textContent = "Undo Done";
-      doneBtn.classList.add("border-emerald-300", "bg-emerald-50", "text-emerald-700");
+      doneBtn.className = "mark-done-btn inline-flex items-center gap-2 rounded-xl border border-emerald-700 bg-emerald-700 px-3 py-2 text-sm font-medium text-white transition hover:border-emerald-800 hover:bg-emerald-800";
     } else {
-      card.classList.remove("ring-1", "ring-emerald-200", "border-emerald-300", "bg-emerald-50/30");
+      card.classList.remove("ring-1", "ring-emerald-300", "border-emerald-400", "bg-emerald-50/50");
       badge.textContent = edited ? "Edited" : "Pending";
       badge.className = edited
         ? "status-badge rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700"
         : "status-badge rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600";
       doneLabel.textContent = "Mark Done";
-      doneBtn.classList.remove("border-emerald-300", "bg-emerald-50", "text-emerald-700");
+      doneBtn.className = "mark-done-btn inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700";
     }
   }
 
